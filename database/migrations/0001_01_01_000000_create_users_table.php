@@ -4,24 +4,55 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Table des utilisateurs du système.
+ *
+ * Rôles définis par le cahier des charges :
+ *  - Administrateur : accès total
+ *  - Pharmacien     : fournisseurs, rapports, achats
+ *  - Vendeur        : encaissement uniquement
+ *
+ * Sécurité :
+ *  - Mot de passe haché en Argon2id (configuré dans .env)
+ *  - Limitation des tentatives de connexion (RateLimiter)
+ *  - Journalisation des actions via la table `logs`
+ */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+
+            // Identité
+            $table->string('nom', 100);
+            $table->string('prenom', 100);
+            $table->string('email', 150)->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('role');
+
+            // Authentification
             $table->string('password');
             $table->rememberToken();
+
+            // Rôle (RBAC)
+            $table->enum('role', ['Administrateur', 'Pharmacien', 'Vendeur'])
+                  ->default('Vendeur')
+                  ->comment('Rôle déterminant les droits d\'accès');
+
+            // Statut (permet de désactiver un compte sans le supprimer)
+            $table->boolean('actif')->default(true);
+
+            // Traçabilité
+            $table->timestamp('date_de_creation')->useCurrent();
+            $table->timestamp('derniere_connexion')->nullable();
             $table->timestamps();
+
+            // Index pour les recherches fréquentes
+            $table->index('role', 'idx_users_role');
+            $table->index('actif', 'idx_users_actif');
         });
 
+        // Tables Laravel par défaut (sessions, reset password)
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
@@ -38,13 +69,10 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };
