@@ -13,17 +13,10 @@ class LigneReception extends Model
     protected $table = 'ligne_receptions';
 
     protected $fillable = [
-        'reception_id',
-        'ligne_achat_id',
-        'medicament_id',
-        'numero_lot',
-        'date_peremption',
-        'date_fabrication',
-        'quantite_recue',
-        'prix_achat_ht_unitaire',
-        'taux_tva',
-        'montant_ht',
-        'montant_ttc',
+        'reception_id', 'ligne_achat_id', 'medicament_id',
+        'numero_lot', 'date_peremption', 'date_fabrication',
+        'quantite_recue', 'prix_achat_ht_unitaire', 'taux_tva',
+        'montant_ht', 'montant_ttc',
     ];
 
     protected $casts = [
@@ -34,8 +27,6 @@ class LigneReception extends Model
         'montant_ht'             => 'decimal:2',
         'montant_ttc'            => 'decimal:2',
     ];
-
-    // === RELATIONS ===
 
     public function reception(): BelongsTo
     {

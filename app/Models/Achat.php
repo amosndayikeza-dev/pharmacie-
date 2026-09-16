@@ -9,25 +9,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modèle Achat — Commande d'achat fournisseur.
- *
- * SÉPARATION STRICTE avec les réceptions : une commande peut être
- * livrée en plusieurs fois.
  */
 class Achat extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'numero_commande',
-        'fournisseur_id',
-        'utilisateur_id',
-        'date_commande',
-        'date_livraison_prevue',
-        'montant_total_ht',
-        'montant_total_tva',
-        'montant_total_ttc',
-        'statut',
-        'notes',
+        'numero_commande', 'fournisseur_id', 'utilisateur_id',
+        'date_commande', 'date_livraison_prevue',
+        'montant_total_ht', 'montant_total_tva', 'montant_total_ttc',
+        'statut', 'notes',
     ];
 
     protected $casts = [
@@ -37,8 +28,6 @@ class Achat extends Model
         'montant_total_tva'     => 'decimal:2',
         'montant_total_ttc'     => 'decimal:2',
     ];
-
-    // === RELATIONS ===
 
     public function fournisseur(): BelongsTo
     {
@@ -60,9 +49,6 @@ class Achat extends Model
         return $this->hasMany(Reception::class);
     }
 
-    // === HELPERS ===
-
-    /** Commande entièrement reçue ? */
     public function estEntierementRecue(): bool
     {
         foreach ($this->lignes as $ligne) {

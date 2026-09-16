@@ -9,25 +9,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modèle Reception — Réception physique de marchandises.
- *
- * Une réception crée des lots physiques via ses lignes.
  */
 class Reception extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'numero_reception',
-        'achat_id',
-        'fournisseur_id',
-        'utilisateur_id',
-        'date_reception',
-        'numero_bon_livraison',
-        'montant_total_ht',
-        'montant_total_tva',
-        'montant_total_ttc',
-        'statut',
-        'observations',
+        'numero_reception', 'achat_id', 'fournisseur_id', 'utilisateur_id',
+        'date_reception', 'numero_bon_livraison',
+        'montant_total_ht', 'montant_total_tva', 'montant_total_ttc',
+        'statut', 'observations',
     ];
 
     protected $casts = [
@@ -36,8 +27,6 @@ class Reception extends Model
         'montant_total_tva' => 'decimal:2',
         'montant_total_ttc' => 'decimal:2',
     ];
-
-    // === RELATIONS ===
 
     public function achat(): BelongsTo
     {

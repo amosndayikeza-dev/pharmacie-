@@ -6,15 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Modèle Paiement — Paiement d'une vente (multi-paiements possibles).
+ * Modèle Paiement — Paiement d'une vente (multi-paiements).
+ *
+ * Vétérinaire : especes, carte, mobile_money, credit.
  */
 class Paiement extends Model
 {
     protected $fillable = [
-        'vente_id',
-        'type',
-        'montant',
-        'reference_externe',
+        'vente_id', 'type', 'montant', 'reference_externe',
     ];
 
     protected $casts = [
@@ -30,16 +29,14 @@ class Paiement extends Model
 
     // === HELPERS ===
 
-    /** Libellé lisible du type de paiement. */
     public function libelle(): string
     {
         return match ($this->type) {
-            'especes'  => 'Espèces',
-            'carte'    => 'Carte bancaire',
-            'secu'     => 'Sécurité sociale',
-            'mutuelle' => 'Mutuelle',
-            'credit'   => 'Crédit',
-            default    => 'Inconnu',
+            'especes'      => 'Espèces',
+            'carte'        => 'Carte bancaire',
+            'mobile_money' => 'Mobile Money',
+            'credit'       => 'Crédit',
+            default        => 'Inconnu',
         };
     }
 }

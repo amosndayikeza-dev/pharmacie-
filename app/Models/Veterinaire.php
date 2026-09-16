@@ -7,21 +7,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Modèle Medecin — Médecin prescripteur.
+ * Modèle Veterinaire — Vétérinaire prescripteur.
  */
-class Medecin extends Model
+class Veterinaire extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'nom',
-        'prenom',
-        'numero_rpps',
-        'specialite',
-        'telephone',
-        'email',
-        'adresse_cabinet',
-        'actif',
+        'nom', 'prenom', 'numero_ordre', 'specialite',
+        'telephone', 'email', 'adresse_cabinet', 'actif',
     ];
 
     protected $casts = [
@@ -30,10 +24,14 @@ class Medecin extends Model
 
     // === RELATIONS ===
 
-    /** Ordonnances rédigées par ce médecin. */
     public function ordonnances(): HasMany
     {
         return $this->hasMany(Ordonnance::class);
+    }
+
+    public function vaccinations(): HasMany
+    {
+        return $this->hasMany(Vaccination::class);
     }
 
     // === HELPERS ===

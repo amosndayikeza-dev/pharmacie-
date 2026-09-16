@@ -7,15 +7,8 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Table des utilisateurs du système.
  *
- * Rôles définis par le cahier des charges :
- *  - Administrateur : accès total
- *  - Pharmacien     : fournisseurs, rapports, achats
- *  - Vendeur        : encaissement uniquement
- *
- * Sécurité :
- *  - Mot de passe haché en Argon2id (configuré dans .env)
- *  - Limitation des tentatives de connexion (RateLimiter)
- *  - Journalisation des actions via la table `logs`
+ * Rôles : Administrateur, Pharmacien, Vendeur.
+ * Hachage Argon2id (configuré dans .env).
  */
 return new class extends Migration
 {
@@ -23,36 +16,24 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-
-            // Identité
             $table->string('nom', 100);
             $table->string('prenom', 100);
             $table->string('email', 150)->unique();
             $table->timestamp('email_verified_at')->nullable();
-
-            // Authentification
             $table->string('password');
             $table->rememberToken();
-
-            // Rôle (RBAC)
             $table->enum('role', ['Administrateur', 'Pharmacien', 'Vendeur'])
                   ->default('Vendeur')
                   ->comment('Rôle déterminant les droits d\'accès');
-
-            // Statut (permet de désactiver un compte sans le supprimer)
             $table->boolean('actif')->default(true);
-
-            // Traçabilité
             $table->timestamp('date_de_creation')->useCurrent();
             $table->timestamp('derniere_connexion')->nullable();
             $table->timestamps();
 
-            // Index pour les recherches fréquentes
             $table->index('role', 'idx_users_role');
             $table->index('actif', 'idx_users_actif');
         });
 
-        // Tables Laravel par défaut (sessions, reset password)
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');

@@ -13,14 +13,10 @@ class LigneAchat extends Model
     protected $table = 'ligne_achats';
 
     protected $fillable = [
-        'achat_id',
-        'medicament_id',
-        'quantite_commandee',
-        'quantite_recue',
-        'prix_achat_ht_unitaire',
-        'taux_tva',
-        'montant_ht',
-        'montant_ttc',
+        'achat_id', 'medicament_id',
+        'quantite_commandee', 'quantite_recue',
+        'prix_achat_ht_unitaire', 'taux_tva',
+        'montant_ht', 'montant_ttc',
     ];
 
     protected $casts = [
@@ -29,8 +25,6 @@ class LigneAchat extends Model
         'montant_ht'             => 'decimal:2',
         'montant_ttc'            => 'decimal:2',
     ];
-
-    // === RELATIONS ===
 
     public function achat(): BelongsTo
     {
@@ -42,15 +36,11 @@ class LigneAchat extends Model
         return $this->belongsTo(Medicament::class);
     }
 
-    // === HELPERS ===
-
-    /** Quantité restant à recevoir. */
     public function quantiteRestante(): int
     {
         return $this->quantite_commandee - $this->quantite_recue;
     }
 
-    /** Ligne entièrement reçue ? */
     public function estEntierementRecue(): bool
     {
         return $this->quantite_recue >= $this->quantite_commandee;

@@ -8,20 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Modèle Ordonnance — Ordonnance médicale.
+ * Modèle Ordonnance — Ordonnance vétérinaire.
  */
 class Ordonnance extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'patient_id',
-        'medecin_id',
-        'numero_ordonnance',
-        'date_prescription',
-        'date_fin_validite',
-        'fichier_scan',
-        'observations',
+        'animal_id', 'veterinaire_id',
+        'numero_ordonnance', 'date_prescription', 'date_fin_validite',
+        'fichier_scan', 'diagnostic', 'observations',
     ];
 
     protected $casts = [
@@ -31,17 +27,16 @@ class Ordonnance extends Model
 
     // === RELATIONS ===
 
-    public function patient(): BelongsTo
+    public function animal(): BelongsTo
     {
-        return $this->belongsTo(Patient::class);
+        return $this->belongsTo(Animal::class);
     }
 
-    public function medecin(): BelongsTo
+    public function veterinaire(): BelongsTo
     {
-        return $this->belongsTo(Medecin::class);
+        return $this->belongsTo(Veterinaire::class);
     }
 
-    /** Ventes liées à cette ordonnance. */
     public function ventes(): HasMany
     {
         return $this->hasMany(Vente::class);
@@ -49,7 +44,6 @@ class Ordonnance extends Model
 
     // === HELPERS ===
 
-    /** Vérifie si l'ordonnance est encore valide. */
     public function estValide(): bool
     {
         if (! $this->date_fin_validite) {
