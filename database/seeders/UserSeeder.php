@@ -2,44 +2,42 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use app\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
-class user_seeder extends Seeder
+class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-            // Admin
+        // Admin
         User::create([
-            'name'     => 'Admin Aspa',
+            'nom'      => 'Aspa',
+            'prenom'   => 'Admin',
             'email'    => 'admin@aspangozi.com',
             'password' => Hash::make('password123'),
-            'role'     => 'admin',
+            'role'     => 'Administrateur',
             'actif'    => true,
         ]);
 
         // Pharmacien
         User::create([
-            'name'     => 'Jean Pharmacien',
+            'nom'      => 'Pharmacien',
+            'prenom'   => 'Jean',
             'email'    => 'pharmacien@aspangozi.com',
             'password' => Hash::make('password123'),
-            'role'     => 'pharmacien',
+            'role'     => 'Pharmacien',
             'actif'    => true,
         ]);
 
         // Vendeur
         User::create([
-            'name'     => 'Marie Vendeuse',
+            'nom'      => 'Vendeuse',
+            'prenom'   => 'Marie',
             'email'    => 'vendeur@aspangozi.com',
             'password' => Hash::make('password123'),
-            'role'     => 'vendeur',
+            'role'     => 'Vendeur',
             'actif'    => true,
-            
         ]);
     }
 }

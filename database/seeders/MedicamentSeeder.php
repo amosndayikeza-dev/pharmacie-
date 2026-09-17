@@ -15,6 +15,6 @@ class MedicamentSeeder extends Seeder
         // medicament
         medicament::create([
             
-        ])
+        ]);
     }
 }
