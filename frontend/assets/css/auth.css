@@ -1,0 +1,84 @@
+/* ============================================================
+   Auth CSS — Page de connexion
+   ============================================================ */
+
+.auth-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #059669 0%, #065f46 100%);
+    padding: var(--space-lg);
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-card {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.auth-logo {
+    font-size: 3rem;
+    margin-bottom: var(--space-sm);
+}
+
+.auth-header h1 {
+    font-size: 1.5rem;
+    color: var(--color-text);
+    margin-bottom: var(--space-xs);
+}
+
+.auth-header p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.field-error {
+    color: var(--color-danger);
+    font-size: 0.85rem;
+    margin-top: var(--space-xs);
+    min-height: 1.1rem;
+}
+
+.form-alert {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    border-left: 3px solid var(--color-danger);
+}
+
+.auth-form .btn {
+    width: 100%;
+    margin-top: var(--space-sm);
+    padding: 12px;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: var(--space-lg);
+    color: var(--color-text-muted);
+}

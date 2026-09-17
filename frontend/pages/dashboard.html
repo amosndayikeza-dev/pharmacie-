@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- En-tête -->
+    <header class="app-header">
+        <div class="app-brand">
+            <span class="app-logo">🐾</span>
+            <span class="app-title">LGO Pharmacie</span>
+        </div>
+        <div class="app-user">
+            <span id="userName">—</span>
+            <span class="badge badge-role" id="userRole">—</span>
+            <button id="logoutBtn" class="btn btn-ghost">Déconnexion</button>
+        </div>
+    </header>
+
+    <!-- Contenu principal -->
+    <main class="app-main">
+        <h1>Tableau de bord</h1>
+        <p class="welcome-message" id="welcomeMessage">Bienvenue !</p>
+
+        <!-- Carte utilisateur -->
+        <section class="cards-grid">
+            <article class="card">
+                <h3>Mon profil</h3>
+                <ul class="info-list">
+                    <li><strong>Nom complet :</strong> <span id="infoName">—</span></li>
+                    <li><strong>Email :</strong> <span id="infoEmail">—</span></li>
+                    <li><strong>Rôle :</strong> <span id="infoRole">—</span></li>
+                    <li><strong>Dernière connexion :</strong> <span id="infoLastLogin">—</span></li>
+                </ul>
+            </article>
+
+            <!-- Carte placeholder pour modules futurs -->
+            <article class="card card-placeholder">
+                <h3>Prochains modules</h3>
+                <p>Les modules <strong>Médicaments</strong>, <strong>Animaux</strong>, <strong>Ventes</strong> et <strong>Rapports</strong> viendront ici.</p>
+            </article>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/storage.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/guards.js"></script>
+    <script src="../assets/js/dashboard.js"></script>
+
+</body>
+</html>

@@ -17,15 +17,18 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => [
-        'http://localhost:3000',   // frontend dev
-        'http://localhost:5173',   // Vite (si utilisé)
-        'http://localhost:8080',   // frontend prod local
-        'http://127.0.0.1:5500',   // Live Server VS Code
-        env('FRONTEND_URL', 'http://localhost:3000'),
-    ],
+    'allowed_methods' => ['*' ],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'http://127.0.0.1:5500',    // Live Server VS Code
+        'http://localhost:5500',    // Live Server VS Code (localhost)
+        'http://127.0.0.1:3000',    // Python http.server
+        'http://localhost:3000',
+        'http://127.0.0.1:8080',
+        'http://localhost:8080',
+        'http://127.0.0.1:5173',    // Vite
+        'http://localhost:5173',
+    ],
 
     'allowed_origins_patterns' => [],
 
@@ -35,6 +38,7 @@ return [
 
     'max_age' => 0,
 
+    // Important : false quand on utilise des tokens Bearer
     'supports_credentials' => false,
 
 ];
