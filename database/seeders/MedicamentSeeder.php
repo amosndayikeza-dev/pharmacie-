@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-
+use app\Models\Medicament;
 class MedicamentSeeder extends Seeder
 {
     /**
@@ -12,6 +12,9 @@ class MedicamentSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // medicament
+        medicament::create([
+            
+        ])
     }
 }
