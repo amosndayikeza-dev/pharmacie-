@@ -46,7 +46,7 @@ const Auth = {
             // Ignorer les erreurs (token déjà expiré)
         } finally {
             Storage.clear();
-            window.location.href = CONFIG.ROUTES.LOGIN;
+            goTo(CONFIG.ROUTES.LOGIN);
         }
     },
 };

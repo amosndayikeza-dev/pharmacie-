@@ -5,55 +5,326 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de bord — LGO Pharmacie</title>
     <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
-<body class="dashboard-body">
+<body>
 
-    <!-- En-tête -->
-    <header class="app-header">
-        <div class="app-brand">
-            <span class="app-logo">🐾</span>
-            <span class="app-title">LGO Pharmacie</span>
+<div class="app-layout" id="appLayout">
+
+    <!-- ============================================================
+         SIDEBAR
+         ============================================================ -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <span class="sidebar-brand-icon">🐾</span>
+            <span class="sidebar-brand-text">LGO Pharmacie</span>
         </div>
-        <div class="app-user">
-            <span id="userName">—</span>
-            <span class="badge badge-role" id="userRole">—</span>
-            <button id="logoutBtn" class="btn btn-ghost">Déconnexion</button>
+
+        <nav class="sidebar-nav">
+            <div class="sidebar-section-title">Principal</div>
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span data-icon="dashboard"></span>
+                <span>Tableau de bord</span>
+            </a>
+
+            <a href="caisse.html" class="sidebar-link">
+                <span data-icon="caisse"></span>
+                <span>Caisse</span>
+            </a>
+
+            <a href="ventes.html" class="sidebar-link">
+                <span data-icon="ventes"></span>
+                <span>Ventes</span>
+            </a>
+
+            <div class="sidebar-section-title">Gestion</div>
+
+            <a href="medicaments.html" class="sidebar-link">
+                <span data-icon="medicaments"></span>
+                <span>Médicaments</span>
+            </a>
+
+            <a href="lots.html" class="sidebar-link">
+                <span data-icon="lots"></span>
+                <span>Lots & Stock</span>
+                <span class="badge" id="badgeAlertes" hidden>0</span>
+            </a>
+
+            <a href="animaux.html" class="sidebar-link">
+                <span data-icon="animaux"></span>
+                <span>Animaux</span>
+            </a>
+
+            <a href="proprietaires.html" class="sidebar-link">
+                <span data-icon="proprietaires"></span>
+                <span>Propriétaires</span>
+            </a>
+
+            <div class="sidebar-section-title">Administration</div>
+
+            <a href="achats.html" class="sidebar-link">
+                <span data-icon="achats"></span>
+                <span>Achats</span>
+            </a>
+
+            <a href="rapports.html" class="sidebar-link">
+                <span data-icon="rapports"></span>
+                <span>Rapports</span>
+            </a>
+
+            <a href="utilisateurs.html" class="sidebar-link">
+                <span data-icon="utilisateurs"></span>
+                <span>Utilisateurs</span>
+            </a>
+
+            <a href="parametres.html" class="sidebar-link">
+                <span data-icon="parametres"></span>
+                <span>Paramètres</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            © 2026 LGO Pharmacie
+        </div>
+    </aside>
+
+    <!-- Overlay mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <header class="header">
+        <div class="header-left">
+            <button class="header-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                <span data-icon="menu"></span>
+            </button>
+            <div>
+                <div class="header-title">Tableau de bord</div>
+                <div class="header-breadcrumb" id="currentDate">—</div>
+            </div>
+        </div>
+
+        <div class="header-user">
+            <button class="user-trigger" id="userTrigger">
+                <div class="user-avatar">—</div>
+                <div class="user-info">
+                    <div class="user-name">—</div>
+                    <div class="user-role">—</div>
+                </div>
+            </button>
+
+            <div class="user-dropdown" id="userDropdown">
+                <a href="profil.html" class="dropdown-item">
+                    <span data-icon="user"></span>
+                    Mon profil
+                </a>
+                <a href="parametres.html" class="dropdown-item">
+                    <span data-icon="settings"></span>
+                    Paramètres
+                </a>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item danger" id="logoutBtn">
+                    <span data-icon="logout"></span>
+                    Se déconnecter
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Contenu principal -->
-    <main class="app-main">
-        <h1>Tableau de bord</h1>
-        <p class="welcome-message" id="welcomeMessage">Bienvenue !</p>
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
+    <main class="main-content">
 
-        <!-- Carte utilisateur -->
-        <section class="cards-grid">
-            <article class="card">
-                <h3>Mon profil</h3>
-                <ul class="info-list">
-                    <li><strong>Nom complet :</strong> <span id="infoName">—</span></li>
-                    <li><strong>Email :</strong> <span id="infoEmail">—</span></li>
-                    <li><strong>Rôle :</strong> <span id="infoRole">—</span></li>
-                    <li><strong>Dernière connexion :</strong> <span id="infoLastLogin">—</span></li>
-                </ul>
-            </article>
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Bonjour <span id="welcomeName">—</span> 👋</h1>
+                <p class="page-subtitle">Voici un aperçu de votre activité aujourd'hui</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary" id="refreshBtn">
+                    <span data-icon="refresh"></span>
+                    Rafraîchir
+                </button>
+            </div>
+        </div>
 
-            <!-- Carte placeholder pour modules futurs -->
-            <article class="card card-placeholder">
-                <h3>Prochains modules</h3>
-                <p>Les modules <strong>Médicaments</strong>, <strong>Animaux</strong>, <strong>Ventes</strong> et <strong>Rapports</strong> viendront ici.</p>
-            </article>
-        </section>
+        <!-- Loader -->
+        <div id="loader" class="loader">
+            <div class="spinner"></div>
+            <span>Chargement des données...</span>
+        </div>
+
+        <!-- Contenu -->
+        <div id="dashboardContent" hidden>
+
+            <!-- STATS CARDS -->
+            <section class="stats-grid">
+                <article class="stat-card stat-primary">
+                    <div class="stat-icon" data-icon="money"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">CA du jour</span>
+                        <span class="stat-value" id="statCaJour">—</span>
+                        <span class="stat-sub" id="statTicketsJour">—</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-info">
+                    <div class="stat-icon" data-icon="calendar"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">CA du mois</span>
+                        <span class="stat-value" id="statCaMois">—</span>
+                        <span class="stat-sub">Mois en cours</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-success">
+                    <div class="stat-icon" data-icon="paw"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Animaux</span>
+                        <span class="stat-value" id="statAnimaux">—</span>
+                        <span class="stat-sub">Actifs</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-warning">
+                    <div class="stat-icon" data-icon="pill"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Médicaments</span>
+                        <span class="stat-value" id="statMedicaments">—</span>
+                        <span class="stat-sub">Au catalogue</span>
+                    </div>
+                </article>
+            </section>
+
+            <!-- ALERTES -->
+            <section class="grid-2">
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="alert"></span>
+                            Alertes stock
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="alertesStock" class="alert-list">
+                            <p class="empty">Chargement...</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="clock"></span>
+                            Alertes péremption
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="alertesPeremption" class="alert-list">
+                            <p class="empty">Chargement...</p>
+                        </div>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- VENTES + TOP -->
+            <section class="grid-2">
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="receipt"></span>
+                            Ventes récentes
+                        </h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="ventesRecentes">
+                            <thead>
+                                <tr>
+                                    <th>Ticket</th>
+                                    <th>Client</th>
+                                    <th class="text-right">Montant</th>
+                                    <th>Heure</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="4" class="empty">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="trophy"></span>
+                            Top médicaments (mois)
+                        </h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="topMedicaments">
+                            <thead>
+                                <tr>
+                                    <th>Médicament</th>
+                                    <th class="text-right">Qté</th>
+                                    <th class="text-right">CA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="3" class="empty">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+            </section>
+
+        </div>
     </main>
 
-    <!-- Scripts -->
-    <script src="../assets/js/config.js"></script>
-    <script src="../assets/js/storage.js"></script>
-    <script src="../assets/js/api.js"></script>
-    <script src="../assets/js/auth.js"></script>
-    <script src="../assets/js/guards.js"></script>
-    <script src="../assets/js/dashboard.js"></script>
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+    <footer class="footer">
+        <span>© 2026 LGO Pharmacie Vétérinaire — v1.0</span>
+        <div class="footer-links">
+            <a href="#">Aide</a>
+            <a href="#">Confidentialité</a>
+            <a href="#">Contact</a>
+        </div>
+    </footer>
+
+</div>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/dashboard.js"></script>
+
+<script>
+    // 1. Injecter toutes les icônes
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-icon]').forEach(el => {
+            const name = el.getAttribute('data-icon');
+            if (Icons[name]) el.innerHTML = Icons[name];
+        });
+    });
+</script>
 
 </body>
 </html>

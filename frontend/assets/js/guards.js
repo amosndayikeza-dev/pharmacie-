@@ -10,7 +10,7 @@ const Guard = {
      */
     requireAuth() {
         if (!Storage.isAuthenticated()) {
-            window.location.href = CONFIG.ROUTES.LOGIN;
+            goTo(CONFIG.ROUTES.LOGIN);
             return false;
         }
         return true;
@@ -22,7 +22,7 @@ const Guard = {
      */
     redirectIfAuthenticated() {
         if (Storage.isAuthenticated()) {
-            window.location.href = CONFIG.ROUTES.DASHBOARD;
+            goTo(CONFIG.ROUTES.DASHBOARD);
             return true;
         }
         return false;

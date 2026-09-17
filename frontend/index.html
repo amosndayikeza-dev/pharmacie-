@@ -8,123 +8,121 @@
     <link rel="stylesheet" href="assets/css/auth.css">
 </head>
 <body class="auth-body">
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">🐾</div>
+            <h1>LGO Pharmacie</h1>
+            <p>Pharmacie vétérinaire</p>
+        </div>
 
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <div class="auth-logo">🐾</div>
-                <h1>LGO Pharmacie</h1>
-                <p>Pharmacie vétérinaire</p>
+        <form id="loginForm" class="auth-form" novalidate>
+            <div class="form-group">
+                <label for="email">Adresse email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="admin@aspangozi.com"
+                    required
+                    autocomplete="email"
+                    autofocus>
+                <span class="field-error" id="emailError"></span>
             </div>
 
-            <form id="loginForm" class="auth-form" novalidate>
-                <div class="form-group">
-                    <label for="email">Adresse email</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="admin@aspangozi.com"
-                        required
-                        autocomplete="email"
-                        autofocus>
-                    <span class="field-error" id="emailError"></span>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Mot de passe</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="••••••••"
-                        required
-                        autocomplete="current-password">
-                    <span class="field-error" id="passwordError"></span>
-                </div>
-
-                <div class="form-alert" id="globalError" hidden></div>
-
-                <button type="submit" id="loginBtn" class="btn btn-primary">
-                    Se connecter
-                </button>
-            </form>
-
-            <div class="auth-footer">
-                <small>© 2026 LGO Pharmacie Vétérinaire</small>
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="••••••••"
+                    required
+                    autocomplete="current-password">
+                <span class="field-error" id="passwordError"></span>
             </div>
+
+            <div class="form-alert" id="globalError" hidden></div>
+
+            <button type="submit" id="loginBtn" class="btn btn-primary">
+                Se connecter
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <small>© 2026 LGO Pharmacie Vétérinaire</small>
         </div>
     </div>
+</div>
 
-    <!-- Scripts dans l'ordre (dépendances) -->
-    <script src="assets/js/config.js"></script>
-    <script src="assets/js/storage.js"></script>
-    <script src="assets/js/api.js"></script>
-    <script src="assets/js/auth.js"></script>
-    <script src="assets/js/guards.js"></script>
+<!-- Scripts -->
+<script src="assets/js/config.js"></script>
+<script src="assets/js/storage.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/guards.js"></script>
 
-    <script>
-        // Rediriger si déjà connecté
-        Guard.redirectIfAuthenticated();
+<script>
+    Guard.redirectIfAuthenticated();
 
-        // Gestion du formulaire
-        const form = document.getElementById('loginForm');
-        const btn = document.getElementById('loginBtn');
-        const globalError = document.getElementById('globalError');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const emailError = document.getElementById('emailError');
-        const passwordError = document.getElementById('passwordError');
+    const form = document.getElementById('loginForm');
+    const btn = document.getElementById('loginBtn');
+    const globalError = document.getElementById('globalError');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const emailError = document.getElementById('emailError');
+    const passwordError = document.getElementById('passwordError');
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-            // Reset erreurs
-            globalError.hidden = true;
-            emailError.textContent = '';
-            passwordError.textContent = '';
+        globalError.hidden = true;
+        emailError.textContent = '';
+        passwordError.textContent = '';
+        emailInput.classList.remove('error');
+        passwordInput.classList.remove('error');
 
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
 
-            // Validation basique côté client
-            let hasError = false;
-            if (!email) {
-                emailError.textContent = 'L\'email est obligatoire.';
-                hasError = true;
+        let hasError = false;
+        if (!email) {
+            emailError.textContent = 'L\'email est obligatoire.';
+            emailInput.classList.add('error');
+            hasError = true;
+        }
+        if (!password) {
+            passwordError.textContent = 'Le mot de passe est obligatoire.';
+            passwordInput.classList.add('error');
+            hasError = true;
+        }
+        if (hasError) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Connexion...';
+
+        try {
+            await Auth.login(email, password);
+            goTo(CONFIG.ROUTES.DASHBOARD);
+        } catch (error) {
+            if (error.errors.email) {
+                emailError.textContent = error.errors.email[0];
+                emailInput.classList.add('error');
             }
-            if (!password) {
-                passwordError.textContent = 'Le mot de passe est obligatoire.';
-                hasError = true;
+            if (error.errors.password) {
+                passwordError.textContent = error.errors.password[0];
+                passwordInput.classList.add('error');
             }
-            if (hasError) return;
-
-            // Désactiver le bouton
-            btn.disabled = true;
-            btn.textContent = 'Connexion...';
-
-            try {
-                await Auth.login(email, password);
-                window.location.href = CONFIG.ROUTES.DASHBOARD;
-            } catch (error) {
-                // Erreurs de validation Laravel
-                if (error.errors.email) {
-                    emailError.textContent = error.errors.email[0];
-                }
-                if (error.errors.password) {
-                    passwordError.textContent = error.errors.password[0];
-                }
-                // Message global
-                if (!error.errors.email && !error.errors.password) {
-                    globalError.textContent = error.message;
-                    globalError.hidden = false;
-                }
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Se connecter';
+            if (!error.errors.email && !error.errors.password) {
+                globalError.textContent = error.message;
+                globalError.hidden = false;
             }
-        });
-    </script>
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Se connecter';
+        }
+    });
+</script>
 
 </body>
 </html>

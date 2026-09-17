@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\DashboardController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -22,6 +23,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/logout-all', [AuthController::class, 'logoutAll'])->name('logout.all');
         Route::post('/refresh',    [AuthController::class, 'refresh'])->name('refresh');
 
-        // Les routes métier viendront ici...
+        // Dashboard 
+
+        Route::prefix('dashboard')->name('dashboard.')->group(function () {
+            Route::get('/',       [DashboardController::class, 'index'])->name('index');
+            Route::get('/stats',  [DashboardController::class, 'stats'])->name('stats');
+            Route::get('/alertes',[DashboardController::class, 'alertes'])->name('alertes');
+        });
     });
 });

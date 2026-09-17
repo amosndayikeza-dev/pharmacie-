@@ -2,47 +2,220 @@
  * Logique du tableau de bord.
  */
 
-// === 1. Protéger la page ===
 Guard.requireAuth();
 
-// === 2. Initialisation au chargement ===
 document.addEventListener('DOMContentLoaded', async () => {
-    // Afficher les infos mises en cache immédiatement
-    renderUser(Storage.getUser());
+    // Initialiser le layout (sidebar, menu user)
+    Layout.init();
 
-    // Rafraîchir depuis l'API (source de vérité)
-    try {
-        const user = await Auth.me();
-        renderUser(user);
-    } catch (e) {
-        // Si erreur, redirection déjà gérée par Api (401)
-    }
+    // Date
+    renderDate();
 
-    // Déconnexion
+    // Charger le dashboard
+    await loadDashboard();
+
+    // Boutons
     document.getElementById('logoutBtn').addEventListener('click', () => {
         if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
             Auth.logout();
         }
     });
+
+    document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
 });
 
-/**
- * Affiche les infos utilisateur dans le DOM.
- */
-function renderUser(user) {
-    if (!user) return;
+async function loadDashboard() {
+    const loader  = document.getElementById('loader');
+    const content = document.getElementById('dashboardContent');
+    const btn     = document.getElementById('refreshBtn');
 
-    const nomComplet = user.nom_complet || `${user.prenom} ${user.nom}`;
+    loader.hidden = false;
+    content.hidden = true;
+    if (btn) btn.disabled = true;
 
-    document.getElementById('userName').textContent = nomComplet;
-    document.getElementById('userRole').textContent = user.role;
-    document.getElementById('welcomeMessage').textContent = `Bienvenue, ${nomComplet} !`;
-    document.getElementById('infoName').textContent = nomComplet;
-    document.getElementById('infoEmail').textContent = user.email;
-    document.getElementById('infoRole').textContent = user.role;
+    try {
+        const response = await Api.get('/dashboard');
+        const data = response.data;
 
-    const lastLogin = user.derniere_connexion
-        ? new Date(user.derniere_connexion).toLocaleString('fr-FR')
-        : 'Première connexion';
-    document.getElementById('infoLastLogin').textContent = lastLogin;
+        renderStats(data.stats);
+        renderAlertesStock(data.alertes_stock);
+        renderAlertesPeremption(data.alertes_peremption);
+        renderVentesRecentes(data.ventes_recentes);
+        renderTopMedicaments(data.top_medicaments);
+
+        // Badge alertes dans la sidebar
+        const nbAlertes =
+            (data.alertes_stock?.length || 0) +
+            (data.alertes_peremption?.perimes?.length || 0) +
+            (data.alertes_peremption?.critiques?.length || 0);
+
+        const badge = document.getElementById('badgeAlertes');
+        if (badge && nbAlertes > 0) {
+            badge.textContent = nbAlertes;
+            badge.hidden = false;
+        }
+
+        content.hidden = false;
+    } catch (error) {
+        alert('Erreur de chargement : ' + error.message);
+    } finally {
+        loader.hidden = true;
+        if (btn) btn.disabled = false;
+    }
+}
+
+function renderDate() {
+    const date = new Date().toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year:    'numeric',
+        month:   'long',
+        day:     'numeric',
+    });
+    document.getElementById('currentDate').textContent =
+        date.charAt(0).toUpperCase() + date.slice(1);
+}
+
+function renderStats(stats) {
+    document.getElementById('statCaJour').textContent = formatMoney(stats.ca_jour);
+    document.getElementById('statTicketsJour').textContent =
+        `${stats.tickets_jour} ticket${stats.tickets_jour > 1 ? 's' : ''}`;
+    document.getElementById('statCaMois').textContent = formatMoney(stats.ca_mois);
+    document.getElementById('statAnimaux').textContent = stats.nb_animaux;
+    document.getElementById('statMedicaments').textContent = stats.nb_medicaments;
+
+    // Nom dans le titre
+    const user = Storage.getUser();
+    if (user) {
+        const prenom = user.prenom || user.nom_complet?.split(' ')[0] || '';
+        document.getElementById('welcomeName').textContent = prenom;
+    }
+}
+
+function renderAlertesStock(alertes) {
+    const container = document.getElementById('alertesStock');
+
+    if (!alertes || alertes.length === 0) {
+        container.innerHTML = '<p class="empty">✅ Aucune alerte de stock</p>';
+        return;
+    }
+
+    container.innerHTML = alertes.map(a => `
+        <div class="alert-item alert-warning">
+            <div class="alert-item-body">
+                <strong>${escapeHtml(a.nom)}</strong>
+                <small>${escapeHtml(a.code_cip)}</small>
+            </div>
+            <span class="badge badge-warning">
+                ${a.stock_actuel} / seuil ${a.seuil_alerte}
+            </span>
+        </div>
+    `).join('');
+}
+
+function renderAlertesPeremption(data) {
+    const container = document.getElementById('alertesPeremption');
+
+    const total =
+        (data.perimes?.length || 0) +
+        (data.critiques?.length || 0) +
+        (data.attention?.length || 0);
+
+    if (total === 0) {
+        container.innerHTML = '<p class="empty">✅ Aucun lot en alerte</p>';
+        return;
+    }
+
+    let html = '';
+
+    if (data.perimes?.length) {
+        html += `<h4 class="alert-group-title danger">Périmés (${data.perimes.length})</h4>`;
+        html += data.perimes.map(l => renderLotAlert(l, 'danger')).join('');
+    }
+    if (data.critiques?.length) {
+        html += `<h4 class="alert-group-title warning">Expire dans 7 jours (${data.critiques.length})</h4>`;
+        html += data.critiques.map(l => renderLotAlert(l, 'warning')).join('');
+    }
+    if (data.attention?.length) {
+        html += `<h4 class="alert-group-title info">Expire dans 30 jours (${data.attention.length})</h4>`;
+        html += data.attention.map(l => renderLotAlert(l, 'info')).join('');
+    }
+
+    container.innerHTML = html;
+}
+
+function renderLotAlert(lot, niveau) {
+    return `
+        <div class="alert-item alert-${niveau}">
+            <div class="alert-item-body">
+                <strong>${escapeHtml(lot.medicament)}</strong>
+                <small>Lot ${escapeHtml(lot.numero_lot)}</small>
+            </div>
+            <span class="badge badge-${niveau}">
+                ${lot.jours_restants < 0 ? 'Périmé' : 'J-' + lot.jours_restants}
+                · ${lot.quantite}
+            </span>
+        </div>
+    `;
+}
+
+function renderVentesRecentes(ventes) {
+    const tbody = document.querySelector('#ventesRecentes tbody');
+
+    if (!ventes || ventes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">Aucune vente récente</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = ventes.map(v => `
+        <tr>
+            <td><strong>${escapeHtml(v.numero_ticket)}</strong></td>
+            <td>${escapeHtml(v.proprietaire)}</td>
+            <td class="text-right">${formatMoney(v.montant_ttc)}</td>
+            <td>${formatTime(v.date_heure)}</td>
+        </tr>
+    `).join('');
+}
+
+function renderTopMedicaments(top) {
+    const tbody = document.querySelector('#topMedicaments tbody');
+
+    if (!top || top.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">Aucune vente ce mois</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = top.map(m => `
+        <tr>
+            <td>
+                <strong>${escapeHtml(m.nom)}</strong><br>
+                <small class="text-muted">${escapeHtml(m.code_cip)}</small>
+            </td>
+            <td class="text-right">${m.quantite_vendue}</td>
+            <td class="text-right">${formatMoney(m.ca_total)}</td>
+        </tr>
+    `).join('');
+}
+
+// === Helpers ===
+function formatMoney(value) {
+    return new Intl.NumberFormat('fr-BI', {
+        style: 'currency',
+        currency: 'BIF',
+        minimumFractionDigits: 0,
+    }).format(value || 0);
+}
+
+function formatTime(isoString) {
+    if (!isoString) return '—';
+    return new Date(isoString).toLocaleTimeString('fr-FR', {
+        hour:   '2-digit',
+        minute: '2-digit',
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

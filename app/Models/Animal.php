@@ -16,6 +16,12 @@ class Animal extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Nom explicite de la table (français).
+     * Sans ça, Laravel chercherait "animals" (anglais).
+     */
+    protected $table = 'animaux';
+
     protected $fillable = [
         'proprietaire_id', 'espece_id',
         'nom', 'numero_identification', 'sexe', 'date_naissance',

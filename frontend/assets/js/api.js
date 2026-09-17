@@ -49,7 +49,7 @@ const Api = {
                 // 401 : token expiré ou invalide → redirection login
                 if (response.status === 401 && requiresAuth) {
                     Storage.clear();
-                    window.location.href = CONFIG.ROUTES.LOGIN;
+                    goTo(CONFIG.ROUTES.LOGIN);
                     return;
                 }
 

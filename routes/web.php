@@ -1,7 +1,5 @@
 <?php
 
-use App\Http\Controllers\Web\DashboardController;
-use App\Http\Controllers\Web\ExportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -9,30 +7,18 @@ use Illuminate\Support\Facades\Route;
 | Routes Web
 |--------------------------------------------------------------------------
 |
-| Routes servies avec session + cookies (Blade, exports PDF/Excel...).
-| L'authentification se fait via le middleware 'auth' (session).
+| Routes Web minimales : page d'accueil informative, exports, webhooks.
+| Tout le reste passe par l'API (/api/v1/*).
 |
 */
 
-// Page d'accueil publique
-Route::get('/', function () {
-    return view('welcome');
-});
+// Page d'accueil informative
+Route::get('/', fn () => response()->json([
+    'app'     => 'LGO Pharmacie Vétérinaire',
+    'version' => '1.0.0',
+    'api'     => '/api/v1',
+]));
 
-// Routes protégées (session)
-Route::middleware(['auth'])->group(function () {
-
-    // Dashboard admin (Blade)
-    Route::get('/admin', [DashboardController::class, 'index'])
-        ->name('admin.dashboard');
-
-    // Exports (fichiers téléchargeables)
-    Route::prefix('exports')->name('exports.')->group(function () {
-        Route::get('/ventes', [ExportController::class, 'ventes'])
-            ->name('ventes');
-        Route::get('/stock', [ExportController::class, 'stock'])
-            ->name('stock');
-        Route::get('/rapport/{date}', [ExportController::class, 'rapport'])
-            ->name('rapport');
-    });
-});
+// Les exports et webhooks viendront plus tard :
+// Route::get('/exports/ventes', [ExportController::class, 'ventes']);
+// Route::post('/webhooks/lumicash', [WebhookController::class, 'lumicash']);
