@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+
 /**
  * Modèle User — Utilisateur du système.
  *
  * Rôles : Administrateur, Pharmacien, Vendeur.
+ * Auth : Sanctum (Bearer token).
  */
 class User extends Authenticatable
 {
@@ -20,7 +22,9 @@ class User extends Authenticatable
         'nom', 'prenom', 'email', 'password', 'role', 'actif',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
 
     protected $casts = [
         'email_verified_at'  => 'datetime',
@@ -77,5 +81,15 @@ class User extends Authenticatable
     public function isVendeur(): bool
     {
         return $this->role === 'Vendeur';
+    }
+
+    /**
+     * Nom complet : "Prénom Nom".
+     *
+     * Utilisé par AuthController pour retourner un nom affichable.
+     */
+    public function nomComplet(): string
+    {
+        return trim("{$this->prenom} {$this->nom}");
     }
 }
