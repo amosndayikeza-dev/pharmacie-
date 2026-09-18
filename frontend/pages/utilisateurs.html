@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilisateurs — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/utilisateurs.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Utilisateurs</h1>
+                <p class="page-subtitle">Gérez les comptes et les rôles du personnel</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouvel utilisateur
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, prénom, email...">
+            </div>
+
+            <select id="filterRole">
+                <option value="">Tous les rôles</option>
+                <option value="Administrateur">Administrateur</option>
+                <option value="Pharmacien">Pharmacien</option>
+                <option value="Vendeur">Vendeur</option>
+            </select>
+
+            <select id="filterActif">
+                <option value="">Tous les statuts</option>
+                <option value="true">Actifs</option>
+                <option value="false">Inactifs</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Nom complet</th>
+                            <th>Email</th>
+                            <th>Rôle</th>
+                            <th>Statut</th>
+                            <th>Dernière connexion</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTbody">
+                        <tr>
+                            <td colspan="6" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier un utilisateur
+     ============================================================ -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="utilisateurs"></span>
+                <span id="modalTitle">Nouvel utilisateur</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="userForm">
+            <div class="modal-body">
+                <input type="hidden" id="userId">
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="nom">Nom <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required maxlength="100">
+                        <span class="field-error" data-error-for="nom"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="prenom">Prénom <span class="required">*</span></label>
+                        <input type="text" id="prenom" name="prenom" required maxlength="100">
+                        <span class="field-error" data-error-for="prenom"></span>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label for="email">Adresse email <span class="required">*</span></label>
+                        <input type="email" id="email" name="email" required maxlength="150">
+                        <span class="field-error" data-error-for="email"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="role">Rôle <span class="required">*</span></label>
+                        <select id="role" name="role" required>
+                            <option value="Vendeur">Vendeur</option>
+                            <option value="Pharmacien">Pharmacien</option>
+                            <option value="Administrateur">Administrateur</option>
+                        </select>
+                        <span class="field-error" data-error-for="role"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-checkbox" style="margin-top: 26px;">
+                            <input type="checkbox" id="actif" name="actif" checked>
+                            <span>Compte actif</span>
+                        </label>
+                    </div>
+
+                    <!-- Mot de passe (création seulement) -->
+                    <div class="form-field" id="passwordField">
+                        <label for="password">Mot de passe <span class="required">*</span></label>
+                        <input type="password" id="password" name="password" minlength="8">
+                        <span class="field-error" data-error-for="password"></span>
+                        <span class="field-hint">Min. 8 caractères, majuscule, minuscule et chiffre.</span>
+                    </div>
+
+                    <div class="form-field" id="passwordConfirmField">
+                        <label for="passwordConfirm">Confirmer le mot de passe <span class="required">*</span></label>
+                        <input type="password" id="passwordConfirm" name="password_confirmation" minlength="8">
+                        <span class="field-error" data-error-for="password_confirmation"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">
+                    Annuler
+                </button>
+                <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Réinitialiser mot de passe
+     ============================================================ -->
+<div class="modal-overlay" id="resetPasswordModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="key"></span>
+                Réinitialiser le mot de passe
+            </h3>
+            <button class="modal-close" id="resetPwdCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="resetPasswordForm">
+            <div class="modal-body">
+                <p class="text-muted" style="margin-bottom: 16px;">
+                    Définir un nouveau mot de passe pour <strong id="resetPwdUserName">—</strong>.
+                    L'utilisateur devra se reconnecter.
+                </p>
+
+                <input type="hidden" id="resetPwdUserId">
+
+                <div class="form-field">
+                    <label for="resetPassword">Nouveau mot de passe <span class="required">*</span></label>
+                    <input type="password" id="resetPassword" required minlength="8">
+                    <span class="field-error" data-error-for="password"></span>
+                </div>
+
+                <div class="form-field" style="margin-top: 12px;">
+                    <label for="resetPasswordConfirm">Confirmation <span class="required">*</span></label>
+                    <input type="password" id="resetPasswordConfirm" required minlength="8">
+                    <span class="field-error" data-error-for="password_confirmation"></span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="resetPwdCancelBtn">Annuler</button>
+                <button type="submit" class="btn btn-primary" id="resetPwdSubmitBtn">
+                    <span data-icon="check"></span>
+                    Réinitialiser
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/utilisateurs.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'utilisateurs',
+            title: 'Utilisateurs',
+            breadcrumb: 'Administration',
+        });
+    });
+</script>
+
+</body>
+</html>

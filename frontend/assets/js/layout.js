@@ -1,15 +1,41 @@
 /**
- * Layout — Sidebar, header, menu utilisateur.
+ * Layout — Monte les composants (sidebar, header, footer)
+ * puis initialise les comportements (toggle, dropdown, etc.).
  */
 
 const Layout = {
+
     /**
-     * Initialise le layout.
+     * Monte le layout sur la page.
+     *
+     * @param {object} options
+     * @param {string} options.activePage    Nom de la page active (sans .html)
+     * @param {string} options.title         Titre du header
+     * @param {string} options.breadcrumb    Sous-titre du header
      */
-    init() {
+    mount(options = {}) {
+        const { activePage = '', title = '', breadcrumb = '' } = options;
+
+        // Remplir les placeholders
+        const sidebarEl = document.getElementById('appSidebar');
+        const headerEl  = document.getElementById('appHeader');
+        const footerEl  = document.getElementById('appFooter');
+
+        if (sidebarEl) sidebarEl.innerHTML = Components.sidebar(activePage);
+        if (headerEl)  headerEl.innerHTML  = Components.header({ title, breadcrumb });
+        if (footerEl)  footerEl.innerHTML  = Components.footer();
+
+        // Injecter les icônes dans les composants
+        document.querySelectorAll('[data-icon]').forEach(el => {
+            const name = el.getAttribute('data-icon');
+            if (typeof Icons !== 'undefined' && Icons[name]) {
+                el.innerHTML = Icons[name];
+            }
+        });
+
+        // Initialiser les comportements
         this.setupSidebar();
         this.setupUserMenu();
-        this.setupActiveLink();
         this.renderUser();
     },
 
@@ -22,12 +48,14 @@ const Layout = {
         const overlay = document.getElementById('sidebarOverlay');
 
         if (toggle) {
-            toggle.addEventListener('click', () => {
+            // Éviter les doubles listeners
+            toggle.replaceWith(toggle.cloneNode(true));
+            const newToggle = document.getElementById('sidebarToggle');
+
+            newToggle.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
-                    // Mobile : ouvrir/fermer en overlay
                     layout.classList.toggle('sidebar-open');
                 } else {
-                    // Desktop : réduire/agrandir
                     layout.classList.toggle('sidebar-collapsed');
                     localStorage.setItem('sidebar_collapsed',
                         layout.classList.contains('sidebar-collapsed'));
@@ -62,27 +90,21 @@ const Layout = {
             dropdown.classList.toggle('open');
         });
 
-        // Fermer en cliquant ailleurs
         document.addEventListener('click', () => {
             dropdown.classList.remove('open');
         });
 
         dropdown.addEventListener('click', (e) => e.stopPropagation());
-    },
 
-    /**
-     * Marque le lien actif selon l'URL.
-     */
-    setupActiveLink() {
-        const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
-
-        document.querySelectorAll('.sidebar-link').forEach(link => {
-            link.classList.remove('active');
-            const href = link.getAttribute('href') || '';
-            if (href.endsWith(currentPage)) {
-                link.classList.add('active');
-            }
-        });
+        // Déconnexion
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+                    Auth.logout();
+                }
+            });
+        }
     },
 
     /**

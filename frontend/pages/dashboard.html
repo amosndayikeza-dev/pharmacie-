@@ -14,129 +14,20 @@
 <div class="app-layout" id="appLayout">
 
     <!-- ============================================================
-         SIDEBAR
+         SIDEBAR (injectée par Layout.mount)
          ============================================================ -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <span class="sidebar-brand-icon">🐾</span>
-            <span class="sidebar-brand-text">LGO Pharmacie</span>
-        </div>
-
-        <nav class="sidebar-nav">
-            <div class="sidebar-section-title">Principal</div>
-
-            <a href="dashboard.html" class="sidebar-link">
-                <span data-icon="dashboard"></span>
-                <span>Tableau de bord</span>
-            </a>
-
-            <a href="caisse.html" class="sidebar-link">
-                <span data-icon="caisse"></span>
-                <span>Caisse</span>
-            </a>
-
-            <a href="ventes.html" class="sidebar-link">
-                <span data-icon="ventes"></span>
-                <span>Ventes</span>
-            </a>
-
-            <div class="sidebar-section-title">Gestion</div>
-
-            <a href="medicaments.html" class="sidebar-link">
-                <span data-icon="medicaments"></span>
-                <span>Médicaments</span>
-            </a>
-
-            <a href="lots.html" class="sidebar-link">
-                <span data-icon="lots"></span>
-                <span>Lots & Stock</span>
-                <span class="badge" id="badgeAlertes" hidden>0</span>
-            </a>
-
-            <a href="animaux.html" class="sidebar-link">
-                <span data-icon="animaux"></span>
-                <span>Animaux</span>
-            </a>
-
-            <a href="proprietaires.html" class="sidebar-link">
-                <span data-icon="proprietaires"></span>
-                <span>Propriétaires</span>
-            </a>
-
-            <div class="sidebar-section-title">Administration</div>
-
-            <a href="achats.html" class="sidebar-link">
-                <span data-icon="achats"></span>
-                <span>Achats</span>
-            </a>
-
-            <a href="rapports.html" class="sidebar-link">
-                <span data-icon="rapports"></span>
-                <span>Rapports</span>
-            </a>
-
-            <a href="utilisateurs.html" class="sidebar-link">
-                <span data-icon="utilisateurs"></span>
-                <span>Utilisateurs</span>
-            </a>
-
-            <a href="parametres.html" class="sidebar-link">
-                <span data-icon="parametres"></span>
-                <span>Paramètres</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            © 2026 LGO Pharmacie
-        </div>
-    </aside>
+    <aside class="sidebar" id="appSidebar"></aside>
 
     <!-- Overlay mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- ============================================================
-         HEADER
+         HEADER (injecté par Layout.mount)
          ============================================================ -->
-    <header class="header">
-        <div class="header-left">
-            <button class="header-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-                <span data-icon="menu"></span>
-            </button>
-            <div>
-                <div class="header-title">Tableau de bord</div>
-                <div class="header-breadcrumb" id="currentDate">—</div>
-            </div>
-        </div>
-
-        <div class="header-user">
-            <button class="user-trigger" id="userTrigger">
-                <div class="user-avatar">—</div>
-                <div class="user-info">
-                    <div class="user-name">—</div>
-                    <div class="user-role">—</div>
-                </div>
-            </button>
-
-            <div class="user-dropdown" id="userDropdown">
-                <a href="profil.html" class="dropdown-item">
-                    <span data-icon="user"></span>
-                    Mon profil
-                </a>
-                <a href="parametres.html" class="dropdown-item">
-                    <span data-icon="settings"></span>
-                    Paramètres
-                </a>
-                <div class="dropdown-divider"></div>
-                <button class="dropdown-item danger" id="logoutBtn">
-                    <span data-icon="logout"></span>
-                    Se déconnecter
-                </button>
-            </div>
-        </div>
-    </header>
+    <header class="header" id="appHeader"></header>
 
     <!-- ============================================================
-         MAIN
+         MAIN — Contenu spécifique au dashboard
          ============================================================ -->
     <main class="main-content">
 
@@ -291,21 +182,14 @@
     </main>
 
     <!-- ============================================================
-         FOOTER
+         FOOTER (injecté par Layout.mount)
          ============================================================ -->
-    <footer class="footer">
-        <span>© 2026 LGO Pharmacie Vétérinaire — v1.0</span>
-        <div class="footer-links">
-            <a href="#">Aide</a>
-            <a href="#">Confidentialité</a>
-            <a href="#">Contact</a>
-        </div>
-    </footer>
+    <footer class="footer" id="appFooter"></footer>
 
 </div>
 
 <!-- ============================================================
-     SCRIPTS
+     SCRIPTS — Ordre important !
      ============================================================ -->
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/storage.js"></script>
@@ -313,15 +197,21 @@
 <script src="../assets/js/auth.js"></script>
 <script src="../assets/js/guards.js"></script>
 <script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
 <script src="../assets/js/layout.js"></script>
 <script src="../assets/js/dashboard.js"></script>
 
 <script>
-    // 1. Injecter toutes les icônes
+    // 1. Protéger la page
+    Guard.requireAuth();
+
+    // 2. Monter le layout (sidebar + header + footer)
     document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('[data-icon]').forEach(el => {
-            const name = el.getAttribute('data-icon');
-            if (Icons[name]) el.innerHTML = Icons[name];
+        Layout.mount({
+            activePage: 'dashboard',
+            title: 'Tableau de bord',
+            breadcrumb: '',
         });
     });
 </script>

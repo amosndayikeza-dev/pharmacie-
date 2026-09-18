@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Médicaments — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/medicaments.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <!-- ============================================================
+         SIDEBAR (injectée par Layout.mount)
+         ============================================================ -->
+    <aside class="sidebar" id="appSidebar"></aside>
+
+    <!-- Overlay mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============================================================
+         HEADER (injecté par Layout.mount)
+         ============================================================ -->
+    <header class="header" id="appHeader"></header>
+
+    <!-- ============================================================
+         MAIN — Contenu spécifique à la page Médicaments
+         ============================================================ -->
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Médicaments</h1>
+                <p class="page-subtitle">Gérez le catalogue des médicaments vétérinaires</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouveau médicament
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar : recherche + filtres -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, CIP, DCI...">
+            </div>
+
+            <select id="filterCategorie">
+                <option value="">Toutes les catégories</option>
+            </select>
+
+            <select id="filterOrdonnance">
+                <option value="">Sur ordonnance ?</option>
+                <option value="true">Sur ordonnance</option>
+                <option value="false">Sans ordonnance</option>
+            </select>
+
+            <select id="filterActif">
+                <option value="">Tous les statuts</option>
+                <option value="true">Actifs</option>
+                <option value="false">Inactifs</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Card avec tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="medicamentsTable">
+                    <thead>
+                        <tr>
+                            <th>Code CIP</th>
+                            <th>Nom</th>
+                            <th>Catégorie</th>
+                            <th>Prix TTC</th>
+                            <th>Stock</th>
+                            <th>Ordonnance</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="medicamentsTbody">
+                        <tr>
+                            <td colspan="8" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <!-- ============================================================
+         FOOTER (injecté par Layout.mount)
+         ============================================================ -->
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier un médicament
+     ============================================================ -->
+<div class="modal-overlay" id="medicamentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="pill"></span>
+                <span id="modalTitle">Nouveau médicament</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="medicamentForm">
+            <div class="modal-body">
+                <input type="hidden" id="medicamentId">
+
+                <div class="form-grid">
+                    <!-- Code CIP -->
+                    <div class="form-field">
+                        <label for="codeCip">Code CIP <span class="required">*</span></label>
+                        <input type="text" id="codeCip" name="code_cip" required maxlength="50">
+                        <span class="field-error" data-error-for="code_cip"></span>
+                    </div>
+
+                    <!-- Code-barre -->
+                    <div class="form-field">
+                        <label for="codeBarre">Code-barre</label>
+                        <input type="text" id="codeBarre" name="code_barre" maxlength="50">
+                        <span class="field-error" data-error-for="code_barre"></span>
+                    </div>
+
+                    <!-- Nom -->
+                    <div class="form-field full-width">
+                        <label for="nom">Nom <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required maxlength="200">
+                        <span class="field-error" data-error-for="nom"></span>
+                    </div>
+
+                    <!-- DCI -->
+                    <div class="form-field">
+                        <label for="denominationCommune">Dénomination commune (DCI)</label>
+                        <input type="text" id="denominationCommune" name="denomination_commune" maxlength="200">
+                    </div>
+
+                    <!-- Laboratoire -->
+                    <div class="form-field">
+                        <label for="laboratoire">Laboratoire</label>
+                        <input type="text" id="laboratoire" name="laboratoire" maxlength="150">
+                    </div>
+
+                    <!-- Forme -->
+                    <div class="form-field">
+                        <label for="forme">Forme</label>
+                        <input type="text" id="forme" name="forme" maxlength="50" placeholder="Comprimé, sirop, injection...">
+                    </div>
+
+                    <!-- Dosage -->
+                    <div class="form-field">
+                        <label for="dosage">Dosage</label>
+                        <input type="text" id="dosage" name="dosage" maxlength="50" placeholder="500mg, 1g, 10%...">
+                    </div>
+
+                    <!-- Catégorie -->
+                    <div class="form-field">
+                        <label for="categorie">Catégorie</label>
+                        <input type="text" id="categorie" name="categorie" maxlength="100" placeholder="Antibiotique, Vaccin...">
+                    </div>
+
+                    <!-- Voie d'administration -->
+                    <div class="form-field">
+                        <label for="voieAdministration">Voie d'administration</label>
+                        <input type="text" id="voieAdministration" name="voie_administration" maxlength="100" placeholder="Orale, injectable...">
+                    </div>
+
+                    <!-- Prix de vente -->
+                    <div class="form-field">
+                        <label for="prixVente">Prix de vente TTC (BIF) <span class="required">*</span></label>
+                        <input type="number" id="prixVente" name="prix_vente_ttc_reference" required min="0" step="0.01">
+                        <span class="field-error" data-error-for="prix_vente_ttc_reference"></span>
+                    </div>
+
+                    <!-- Taux TVA -->
+                    <div class="form-field">
+                        <label for="tauxTva">Taux TVA (%)</label>
+                        <input type="number" id="tauxTva" name="taux_tva" min="0" max="100" step="0.01" value="0">
+                    </div>
+
+                    <!-- Seuil d'alerte -->
+                    <div class="form-field">
+                        <label for="seuilAlerte">Seuil d'alerte</label>
+                        <input type="number" id="seuilAlerte" name="seuil_alerte" min="0" value="10">
+                    </div>
+
+                    <!-- Stock max -->
+                    <div class="form-field">
+                        <label for="stockMax">Stock maximum</label>
+                        <input type="number" id="stockMax" name="stock_max" min="0">
+                    </div>
+
+                    <!-- Délai d'attente -->
+                    <div class="form-field full-width">
+                        <label for="delaiAttente">Délai d'attente (bétail)</label>
+                        <input type="text" id="delaiAttente" name="delai_attente" maxlength="100" placeholder="Ex: 7 jours avant abattage">
+                    </div>
+
+                    <!-- Posologie -->
+                    <div class="form-field full-width">
+                        <label for="posologie">Posologie</label>
+                        <textarea id="posologie" name="posologie" placeholder="Instructions de dosage..."></textarea>
+                    </div>
+
+                    <!-- Checkboxes -->
+                    <div class="form-field full-width">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="surOrdonnance" name="sur_ordonnance">
+                            <span>Sur ordonnance vétérinaire</span>
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="usagePreventif" name="usage_preventif">
+                            <span>Usage préventif (vaccin, vitamine)</span>
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="actif" name="actif" checked>
+                            <span>Actif dans le catalogue</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">
+                    Annuler
+                </button>
+                <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation de suppression
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS — Ordre important !
+     ============================================================ -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/medicaments.js"></script>
+
+<script>
+    // 1. Protéger la page
+    Guard.requireAuth();
+
+    // 2. Monter le layout (sidebar + header + footer)
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'medicaments',
+            title: 'Médicaments',
+            breadcrumb: 'Catalogue',
+        });
+    });
+</script>
+
+</body>
+</html>

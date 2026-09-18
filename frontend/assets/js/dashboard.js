@@ -1,37 +1,36 @@
 /**
  * Logique du tableau de bord.
+ *
+ * ⚠️ Le layout (sidebar, header, footer) est géré par components.js + layout.js
+ * Ce fichier ne contient QUE la logique du contenu du dashboard.
  */
 
-Guard.requireAuth();
-
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialiser le layout (sidebar, menu user)
-    Layout.init();
-
-    // Date
+    // 1. Date du jour dans le contenu
     renderDate();
 
-    // Charger le dashboard
+    // 2. Charger le dashboard
     await loadDashboard();
 
-    // Boutons
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-            Auth.logout();
-        }
-    });
-
-    document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
+    // 3. Bouton rafraîchir (spécifique au dashboard)
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadDashboard);
+    }
 });
+
+// ============================================================
+// CHARGEMENT DES DONNÉES
+// ============================================================
 
 async function loadDashboard() {
     const loader  = document.getElementById('loader');
     const content = document.getElementById('dashboardContent');
     const btn     = document.getElementById('refreshBtn');
 
-    loader.hidden = false;
-    content.hidden = true;
-    if (btn) btn.disabled = true;
+    if (loader)  loader.hidden = false;
+    if (content) content.hidden = true;
+    if (btn)     btn.disabled = true;
 
     try {
         const response = await Api.get('/dashboard');
@@ -55,14 +54,18 @@ async function loadDashboard() {
             badge.hidden = false;
         }
 
-        content.hidden = false;
+        if (content) content.hidden = false;
     } catch (error) {
-        alert('Erreur de chargement : ' + error.message);
+        Toast.error('Erreur de chargement : ' + error.message);
     } finally {
-        loader.hidden = true;
-        if (btn) btn.disabled = false;
+        if (loader) loader.hidden = true;
+        if (btn)    btn.disabled = false;
     }
 }
+
+// ============================================================
+// RENDERING
+// ============================================================
 
 function renderDate() {
     const date = new Date().toLocaleDateString('fr-FR', {
@@ -71,8 +74,8 @@ function renderDate() {
         month:   'long',
         day:     'numeric',
     });
-    document.getElementById('currentDate').textContent =
-        date.charAt(0).toUpperCase() + date.slice(1);
+    const el = document.getElementById('currentDate');
+    if (el) el.textContent = date.charAt(0).toUpperCase() + date.slice(1);
 }
 
 function renderStats(stats) {
@@ -87,12 +90,14 @@ function renderStats(stats) {
     const user = Storage.getUser();
     if (user) {
         const prenom = user.prenom || user.nom_complet?.split(' ')[0] || '';
-        document.getElementById('welcomeName').textContent = prenom;
+        const el = document.getElementById('welcomeName');
+        if (el) el.textContent = prenom;
     }
 }
 
 function renderAlertesStock(alertes) {
     const container = document.getElementById('alertesStock');
+    if (!container) return;
 
     if (!alertes || alertes.length === 0) {
         container.innerHTML = '<p class="empty">✅ Aucune alerte de stock</p>';
@@ -114,6 +119,7 @@ function renderAlertesStock(alertes) {
 
 function renderAlertesPeremption(data) {
     const container = document.getElementById('alertesPeremption');
+    if (!container) return;
 
     const total =
         (data.perimes?.length || 0) +
@@ -160,6 +166,7 @@ function renderLotAlert(lot, niveau) {
 
 function renderVentesRecentes(ventes) {
     const tbody = document.querySelector('#ventesRecentes tbody');
+    if (!tbody) return;
 
     if (!ventes || ventes.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" class="empty">Aucune vente récente</td></tr>';
@@ -178,6 +185,7 @@ function renderVentesRecentes(ventes) {
 
 function renderTopMedicaments(top) {
     const tbody = document.querySelector('#topMedicaments tbody');
+    if (!tbody) return;
 
     if (!top || top.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="empty">Aucune vente ce mois</td></tr>';
@@ -196,7 +204,10 @@ function renderTopMedicaments(top) {
     `).join('');
 }
 
-// === Helpers ===
+// ============================================================
+// HELPERS
+// ============================================================
+
 function formatMoney(value) {
     return new Intl.NumberFormat('fr-BI', {
         style: 'currency',

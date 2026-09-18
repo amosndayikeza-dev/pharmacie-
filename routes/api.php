@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\MedicamentController;
+use App\Http\Controllers\Api\V1\UserController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -22,6 +24,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/logout',     [AuthController::class, 'logout'])->name('logout');
         Route::post('/logout-all', [AuthController::class, 'logoutAll'])->name('logout.all');
         Route::post('/refresh',    [AuthController::class, 'refresh'])->name('refresh');
+        Route::post('/me/change-password', [UserController::class, 'changePassword'])->name('me.change-password');
 
         // Dashboard 
 
@@ -29,6 +32,40 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/',       [DashboardController::class, 'index'])->name('index');
             Route::get('/stats',  [DashboardController::class, 'stats'])->name('stats');
             Route::get('/alertes',[DashboardController::class, 'alertes'])->name('alertes');
+        });
+
+
+        // --- Lecture (tous les rôles connectés) ---
+        Route::prefix('medicaments')->name('medicaments.')->group(function () {
+            Route::get('/',              [MedicamentController::class, 'index'])->name('index');
+            Route::get('/categories',    [MedicamentController::class, 'categories'])->name('categories');
+            Route::get('/alertes-stock', [MedicamentController::class, 'alertesStock'])->name('alertes.stock');
+            Route::get('/{id}',          [MedicamentController::class, 'show'])->whereNumber('id')->name('show');
+        });
+
+        // --- Écriture (Administrateur uniquement) ---
+        Route::middleware('role.api:Administrateur')->prefix('medicaments')->name('medicaments.')->group(function () {
+            Route::post('/',                  [MedicamentController::class, 'store'])->name('store');
+            Route::put('/{id}',               [MedicamentController::class, 'update'])->whereNumber('id')->name('update');
+            Route::patch('/{id}',             [MedicamentController::class, 'update'])->whereNumber('id');
+            Route::delete('/{id}',            [MedicamentController::class, 'destroy'])->whereNumber('id')->name('destroy');
+            Route::post('/{id}/toggle-actif', [MedicamentController::class, 'toggleActif'])->whereNumber('id')->name('toggle.actif');
+            Route::post('/{id}/restore',      [MedicamentController::class, 'restore'])->whereNumber('id')->name('restore');
+        });
+
+        
+        // ============================================================
+        // GESTION DES UTILISATEURS — Administrateur uniquement
+        // ============================================================
+        Route::middleware('role.api:Administrateur')->prefix('users')->name('users.')->group(function () {
+            Route::get('/',                   [UserController::class, 'index'])->name('index');
+            Route::get('/{id}',               [UserController::class, 'show'])->whereNumber('id')->name('show');
+            Route::post('/',                  [UserController::class, 'store'])->name('store');
+            Route::put('/{id}',               [UserController::class, 'update'])->whereNumber('id')->name('update');
+            Route::patch('/{id}',             [UserController::class, 'update'])->whereNumber('id');
+            Route::delete('/{id}',            [UserController::class, 'destroy'])->whereNumber('id')->name('destroy');
+            Route::post('/{id}/toggle-actif', [UserController::class, 'toggleActif'])->whereNumber('id')->name('toggle.actif');
+            Route::post('/{id}/reset-password', [UserController::class, 'resetPassword'])->whereNumber('id')->name('reset.password');
         });
     });
 });

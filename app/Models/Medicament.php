@@ -16,6 +16,7 @@ class Medicament extends Model
 {
     use SoftDeletes;
 
+    protected $table = "medicaments";
     protected $fillable = [
         'code_cip', 'code_barre', 'nom', 'denomination_commune',
         'forme', 'dosage', 'laboratoire',

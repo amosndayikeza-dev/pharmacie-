@@ -1,0 +1,57 @@
+/* ============================================================
+   MEDICAMENTS CSS — Styles spécifiques
+   ============================================================ */
+
+/* Tableau plus compact sur cette page */
+.data-table td code {
+    background: var(--color-bg-dark);
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.8rem;
+    color: var(--color-primary-dark);
+    font-weight: 600;
+}
+
+.data-table td .btn-icon {
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    color: var(--color-text-muted);
+}
+
+.data-table td .btn-icon:hover {
+    color: var(--color-primary);
+    background: var(--color-primary-50);
+}
+
+.data-table td .btn-icon:last-child:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-search,
+    .toolbar select {
+        width: 100%;
+    }
+
+    .data-table {
+        font-size: 0.8rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px 6px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

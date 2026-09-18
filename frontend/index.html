@@ -105,22 +105,27 @@
             await Auth.login(email, password);
             goTo(CONFIG.ROUTES.DASHBOARD);
         } catch (error) {
-            if (error.errors.email) {
-                emailError.textContent = error.errors.email[0];
-                emailInput.classList.add('error');
-            }
-            if (error.errors.password) {
-                passwordError.textContent = error.errors.password[0];
-                passwordInput.classList.add('error');
-            }
-            if (!error.errors.email && !error.errors.password) {
-                globalError.textContent = error.message;
-                globalError.hidden = false;
-            }
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Se connecter';
+        // Sécuriser l'accès à error.errors (peut être undefined)
+        const errors = error.errors || {};
+
+        if (errors.email) {
+            emailError.textContent = errors.email[0];
+            emailInput.classList.add('error');
         }
+
+        if (errors.password) {
+            passwordError.textContent = errors.password[0];
+            passwordInput.classList.add('error');
+        }
+
+        if (!errors.email && !errors.password) {
+            globalError.textContent = error.message || 'Une erreur est survenue.';
+            globalError.hidden = false;
+        }
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Se connecter';
+    }
     });
 </script>
 
