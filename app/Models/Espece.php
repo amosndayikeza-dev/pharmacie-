@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Espece extends Model
 {
     use SoftDeletes;
-
+    protected $table="especes";
     protected $fillable = [
         'nom', 'nom_scientifique', 'categorie',
         'description', 'actif',
