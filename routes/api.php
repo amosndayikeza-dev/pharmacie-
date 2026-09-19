@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\MedicamentController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VeterinaireController;
+use App\Http\Controllers\Api\V1\EspeceController;
+use App\Http\Controllers\Api\V1\FournisseurController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -88,6 +90,56 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::middleware('role.api:Administrateur')->prefix('veterinaires')->name('veterinaires.')->group(function () {
             Route::delete('/{id}',         [VeterinaireController::class, 'destroy'])->whereNumber('id')->name('destroy');
             Route::post('/{id}/restore',   [VeterinaireController::class, 'restore'])->whereNumber('id')->name('restore');
+        });
+
+            // ============================================================
+        // ESPÈCES
+        // ============================================================
+
+        // --- Lecture (tous les rôles connectés) ---
+        Route::prefix('especes')->name('especes.')->group(function () {
+            Route::get('/',              [EspeceController::class, 'index'])->name('index');
+            Route::get('/categories',    [EspeceController::class, 'categories'])->name('categories');
+            Route::get('/{id}',          [EspeceController::class, 'show'])->whereNumber('id')->name('show');
+        });
+
+        // --- Écriture (Administrateur + Pharmacien) ---
+        Route::middleware('role.api:Administrateur,Pharmacien')->prefix('especes')->name('especes.')->group(function () {
+            Route::post('/',                  [EspeceController::class, 'store'])->name('store');
+            Route::put('/{id}',               [EspeceController::class, 'update'])->whereNumber('id')->name('update');
+            Route::patch('/{id}',             [EspeceController::class, 'update'])->whereNumber('id');
+            Route::post('/{id}/toggle-actif', [EspeceController::class, 'toggleActif'])->whereNumber('id')->name('toggle.actif');
+        });
+
+        // --- Écriture sensible (Administrateur uniquement) ---
+        Route::middleware('role.api:Administrateur')->prefix('especes')->name('especes.')->group(function () {
+            Route::delete('/{id}',       [EspeceController::class, 'destroy'])->whereNumber('id')->name('destroy');
+            Route::post('/{id}/restore', [EspeceController::class, 'restore'])->whereNumber('id')->name('restore');
+        });
+
+        // ============================================================
+        // FOURNISSEURS
+        // ============================================================
+
+        // --- Lecture (tous les rôles connectés) ---
+        Route::prefix('fournisseurs')->name('fournisseurs.')->group(function () {
+            Route::get('/',              [FournisseurController::class, 'index'])->name('index');
+            Route::get('/villes',        [FournisseurController::class, 'villes'])->name('villes');
+            Route::get('/{id}',          [FournisseurController::class, 'show'])->whereNumber('id')->name('show');
+        });
+
+        // --- Écriture (Administrateur + Pharmacien) ---
+        Route::middleware('role.api:Administrateur,Pharmacien')->prefix('fournisseurs')->name('fournisseurs.')->group(function () {
+            Route::post('/',                  [FournisseurController::class, 'store'])->name('store');
+            Route::put('/{id}',               [FournisseurController::class, 'update'])->whereNumber('id')->name('update');
+            Route::patch('/{id}',             [FournisseurController::class, 'update'])->whereNumber('id');
+            Route::post('/{id}/toggle-actif', [FournisseurController::class, 'toggleActif'])->whereNumber('id')->name('toggle.actif');
+        });
+
+        // --- Écriture sensible (Administrateur uniquement) ---
+        Route::middleware('role.api:Administrateur')->prefix('fournisseurs')->name('fournisseurs.')->group(function () {
+            Route::delete('/{id}',       [FournisseurController::class, 'destroy'])->whereNumber('id')->name('destroy');
+            Route::post('/{id}/restore', [FournisseurController::class, 'restore'])->whereNumber('id')->name('restore');
         });
     });
 });
