@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vétérinaires — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/veterinaires.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Vétérinaires</h1>
+                <p class="page-subtitle">Gérez les vétérinaires prescripteurs partenaires</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouveau vétérinaire
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, prénom, numéro d'ordre...">
+            </div>
+
+            <select id="filterSpecialite">
+                <option value="">Toutes les spécialités</option>
+            </select>
+
+            <select id="filterActif">
+                <option value="">Tous les statuts</option>
+                <option value="true">Actifs</option>
+                <option value="false">Inactifs</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="veterinairesTable">
+                    <thead>
+                        <tr>
+                            <th>Nom complet</th>
+                            <th>N° d'ordre</th>
+                            <th>Spécialité</th>
+                            <th>Contact</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="veterinairesTbody">
+                        <tr>
+                            <td colspan="6" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier un vétérinaire
+     ============================================================ -->
+<div class="modal-overlay" id="veterinaireModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="stethoscope"></span>
+                <span id="modalTitle">Nouveau vétérinaire</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="veterinaireForm">
+            <div class="modal-body">
+                <input type="hidden" id="veterinaireId">
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="nom">Nom <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required maxlength="100">
+                        <span class="field-error" data-error-for="nom"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="prenom">Prénom</label>
+                        <input type="text" id="prenom" name="prenom" maxlength="100">
+                        <span class="field-error" data-error-for="prenom"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="numeroOrdre">Numéro d'ordre</label>
+                        <input type="text" id="numeroOrdre" name="numero_ordre" maxlength="50" placeholder="BI-MED-0001">
+                        <span class="field-error" data-error-for="numero_ordre"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="specialite">Spécialité</label>
+                        <input type="text" id="specialite" name="specialite" maxlength="150" placeholder="Bovins, Animaux de compagnie...">
+                        <span class="field-error" data-error-for="specialite"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="telephone">Téléphone</label>
+                        <input type="text" id="telephone" name="telephone" maxlength="30" placeholder="+257 79 11 22 33">
+                        <span class="field-error" data-error-for="telephone"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" maxlength="150">
+                        <span class="field-error" data-error-for="email"></span>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label for="adresseCabinet">Adresse du cabinet</label>
+                        <textarea id="adresseCabinet" name="adresse_cabinet" maxlength="500" placeholder="Clinique Centrale, Bujumbura..."></textarea>
+                        <span class="field-error" data-error-for="adresse_cabinet"></span>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="actif" name="actif" checked>
+                            <span>Vétérinaire actif (peut prescrire)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">
+                    Annuler
+                </button>
+                <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/veterinaires.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'veterinaires',
+            title: 'Vétérinaires',
+            breadcrumb: 'Partenaires',
+        });
+    });
+</script>
+
+</body>
+</html>

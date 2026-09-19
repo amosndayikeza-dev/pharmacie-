@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\MedicamentController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\VeterinaireController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -66,6 +67,27 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::delete('/{id}',            [UserController::class, 'destroy'])->whereNumber('id')->name('destroy');
             Route::post('/{id}/toggle-actif', [UserController::class, 'toggleActif'])->whereNumber('id')->name('toggle.actif');
             Route::post('/{id}/reset-password', [UserController::class, 'resetPassword'])->whereNumber('id')->name('reset.password');
+        });
+
+        // --- Lecture (tous les rôles connectés) ---
+        Route::prefix('veterinaires')->name('veterinaires.')->group(function () {
+            Route::get('/',               [VeterinaireController::class, 'index'])->name('index');
+            Route::get('/specialites',    [VeterinaireController::class, 'specialites'])->name('specialites');
+            Route::get('/{id}',           [VeterinaireController::class, 'show'])->whereNumber('id')->name('show');
+        });
+
+        // --- Écriture (Admin + Pharmacien) ---
+        Route::middleware('role.api:Administrateur,Pharmacien')->prefix('veterinaires')->name('veterinaires.')->group(function () {
+            Route::post('/',                    [VeterinaireController::class, 'store'])->name('store');
+            Route::put('/{id}',                 [VeterinaireController::class, 'update'])->whereNumber('id')->name('update');
+            Route::patch('/{id}',               [VeterinaireController::class, 'update'])->whereNumber('id');
+            Route::post('/{id}/toggle-actif',   [VeterinaireController::class, 'toggleActif'])->whereNumber('id')->name('toggle.actif');
+        });
+
+        // --- Écriture sensible (Administrateur uniquement) ---
+        Route::middleware('role.api:Administrateur')->prefix('veterinaires')->name('veterinaires.')->group(function () {
+            Route::delete('/{id}',         [VeterinaireController::class, 'destroy'])->whereNumber('id')->name('destroy');
+            Route::post('/{id}/restore',   [VeterinaireController::class, 'restore'])->whereNumber('id')->name('restore');
         });
     });
 });

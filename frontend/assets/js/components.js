@@ -44,6 +44,7 @@ const Components = {
                     { href: 'rapports.html',     icon: 'rapports',     label: 'Rapports' },
                     { href: 'utilisateurs.html', icon: 'utilisateurs', label: 'Utilisateurs' },
                     { href: 'parametres.html',   icon: 'parametres',   label: 'Paramètres' },
+                    { href: 'veterinaires.html', icon: 'stethoscope', label: 'Vétérinaires' },
                 ],
             },
         ];
