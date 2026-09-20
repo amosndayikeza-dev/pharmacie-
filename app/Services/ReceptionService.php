@@ -28,10 +28,8 @@ class ReceptionService
     {
         return DB::transaction(function () use ($data, $utilisateurId) {
 
-            // 1. Calcul des totaux
             $totaux = $this->calculerTotaux($data['lignes']);
 
-            // 2. Création de la réception
             $reception = Reception::create([
                 'numero_reception'     => $this->genererNumeroReception(),
                 'achat_id'             => $data['achat_id'] ?? null,
@@ -46,7 +44,6 @@ class ReceptionService
                 'observations'         => $data['observations'] ?? null,
             ]);
 
-            // 3. Création des lignes
             $this->creerLignes($reception, $data['lignes']);
 
             return $reception;
@@ -66,7 +63,6 @@ class ReceptionService
 
         return DB::transaction(function () use ($reception, $data) {
 
-            // Mise à jour des champs simples
             if (isset($data['date_reception'])) {
                 $reception->date_reception = $data['date_reception'];
             }
@@ -77,7 +73,6 @@ class ReceptionService
                 $reception->observations = $data['observations'];
             }
 
-            // Remplacement des lignes si fournies
             if (isset($data['lignes'])) {
                 $reception->lignes()->delete();
 
@@ -117,7 +112,6 @@ class ReceptionService
 
         return DB::transaction(function () use ($reception) {
 
-            // 1. Créer un LOT pour chaque ligne de réception
             foreach ($reception->lignes as $ligne) {
                 $lot = Lot::create([
                     'medicament_id'          => $ligne->medicament_id,
@@ -130,16 +124,18 @@ class ReceptionService
                     'quantite_restante'      => $ligne->quantite_recue,
                 ]);
 
-                // 2. Enregistrer un mouvement de stock (entrée)
+                // Mouvement de stock (entrée)
                 MouvementStock::create([
-                    'lot_id'       => $lot->id,
-                    'date_heure'   => now(),
-                    'quantite'     => $ligne->quantite_recue,
-                    'type'         => 'achat',
-                    'reference_id' => $reception->id,
+                    'lot_id'         => $lot->id,
+                    'date_heure'     => now(),
+                    'quantite'       => $ligne->quantite_recue,     // positif = entrée
+                    'type'           => 'achat',
+                    'reference_id'   => $reception->id,
+                    'reference_type' => Reception::class,           // ← AJOUT
+                    'utilisateur_id' => $reception->utilisateur_id, // ← AJOUT
+                    'motif'          => "Réception {$reception->numero_reception}",  // ← AJOUT
                 ]);
 
-                // 3. Mettre à jour la ligne d'achat liée
                 if ($ligne->ligne_achat_id) {
                     $ligneAchat = LigneAchat::find($ligne->ligne_achat_id);
                     if ($ligneAchat) {
@@ -149,12 +145,10 @@ class ReceptionService
                 }
             }
 
-            // 4. Mettre à jour le statut de l'achat lié
             if ($reception->achat_id) {
                 $this->majStatutAchat(Achat::find($reception->achat_id));
             }
 
-            // 5. Passer la réception en validée
             $reception->statut = 'validee';
             $reception->save();
 
