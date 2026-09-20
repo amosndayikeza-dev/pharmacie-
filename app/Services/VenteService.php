@@ -70,6 +70,18 @@ class VenteService
             $vente->montant_total_ttc = $totaux['ttc'];
             $vente->save();
 
+            // 5. Journaliser l'action (audit RGPD)
+            LogService::log(
+                action: 'creation_vente',
+                module: 'ventes',
+                entite: $vente,
+                donneesApres: [
+                    'numero_ticket' => $vente->numero_ticket,
+                    'montant_ttc'   => $vente->montant_total_ttc,
+                    'nb_lignes'     => $vente->lignes()->count(),
+                ],
+            );
+
             return $vente;
         });
     }
@@ -93,7 +105,7 @@ class VenteService
             ->where('quantite_restante', '>', 0)
             ->where('date_peremption', '>=', now())
             ->orderBy('date_peremption', 'asc')
-            ->lockForUpdate()  // 🔒 évite les race conditions
+            ->lockForUpdate()
             ->get();
 
         // 2. Vérifier le stock total disponible
@@ -122,7 +134,6 @@ class VenteService
             // Calculs financiers
             $prixAchatHtFige = (float) $lot->prix_achat_ht_unitaire;
 
-            // Le prix de vente TTC → on en déduit le HT
             $prixVenteHtUnitaire  = $prixVenteTtcUnitaire / (1 + ($tauxTva / 100));
             $prixVenteTvaUnitaire = $prixVenteTtcUnitaire - $prixVenteHtUnitaire;
 
@@ -154,12 +165,12 @@ class VenteService
             MouvementStock::create([
                 'lot_id'         => $lot->id,
                 'date_heure'     => now(),
-                'quantite'       => -$quantitePrise,           // négatif = sortie
+                'quantite'       => -$quantitePrise,
                 'type'           => 'vente',
                 'reference_id'   => $vente->id,
-                'reference_type' => Vente::class,              // ← AJOUT
-                'utilisateur_id' => $vente->utilisateur_id,    // ← AJOUT
-                'motif'          => "Vente {$vente->numero_ticket}",  // ← AJOUT
+                'reference_type' => Vente::class,
+                'utilisateur_id' => $vente->utilisateur_id,
+                'motif'          => "Vente {$vente->numero_ticket}",
             ]);
 
             // Cumul

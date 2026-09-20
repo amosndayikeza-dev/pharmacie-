@@ -13,17 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Service métier des réceptions.
- *
- * ⚠️ Contient la logique complexe : création des lots, mise à jour des
- *    stocks, changement de statut de l'achat — le tout en TRANSACTION.
  */
 class ReceptionService
 {
-    /**
-     * Crée une réception en brouillon avec ses lignes.
-     *
-     * ⚠️ Aucun lot n'est créé à ce stade.
-     */
     public function creer(array $data, int $utilisateurId): Reception
     {
         return DB::transaction(function () use ($data, $utilisateurId) {
@@ -46,13 +38,21 @@ class ReceptionService
 
             $this->creerLignes($reception, $data['lignes']);
 
+            // Journalisation
+            LogService::log(
+                action: 'creation_reception',
+                module: 'receptions',
+                entite: $reception,
+                donneesApres: [
+                    'numero_reception' => $reception->numero_reception,
+                    'montant_ttc'      => $reception->montant_total_ttc,
+                ],
+            );
+
             return $reception;
         });
     }
 
-    /**
-     * Modifie une réception en brouillon.
-     */
     public function modifier(Reception $reception, array $data): Reception
     {
         if ($reception->statut !== 'brouillon') {
@@ -62,6 +62,8 @@ class ReceptionService
         }
 
         return DB::transaction(function () use ($reception, $data) {
+
+            $avant = $reception->toArray();
 
             if (isset($data['date_reception'])) {
                 $reception->date_reception = $data['date_reception'];
@@ -87,15 +89,19 @@ class ReceptionService
 
             $reception->save();
 
+            // Journalisation
+            LogService::log(
+                action: 'modification_reception',
+                module: 'receptions',
+                entite: $reception,
+                donneesAvant: $avant,
+                donneesApres: $reception->fresh()->toArray(),
+            );
+
             return $reception;
         });
     }
 
-    /**
-     * Valide une réception : crée les lots, met à jour les stocks et les achats.
-     *
-     * 🎯 C'EST ICI QUE LES STOCKS BOUGENT.
-     */
     public function valider(Reception $reception): Reception
     {
         if ($reception->statut !== 'brouillon') {
@@ -124,16 +130,15 @@ class ReceptionService
                     'quantite_restante'      => $ligne->quantite_recue,
                 ]);
 
-                // Mouvement de stock (entrée)
                 MouvementStock::create([
                     'lot_id'         => $lot->id,
                     'date_heure'     => now(),
-                    'quantite'       => $ligne->quantite_recue,     // positif = entrée
+                    'quantite'       => $ligne->quantite_recue,
                     'type'           => 'achat',
                     'reference_id'   => $reception->id,
-                    'reference_type' => Reception::class,           // ← AJOUT
-                    'utilisateur_id' => $reception->utilisateur_id, // ← AJOUT
-                    'motif'          => "Réception {$reception->numero_reception}",  // ← AJOUT
+                    'reference_type' => Reception::class,
+                    'utilisateur_id' => $reception->utilisateur_id,
+                    'motif'          => "Réception {$reception->numero_reception}",
                 ]);
 
                 if ($ligne->ligne_achat_id) {
@@ -151,6 +156,17 @@ class ReceptionService
 
             $reception->statut = 'validee';
             $reception->save();
+
+            // Journalisation
+            LogService::log(
+                action: 'validation_reception',
+                module: 'receptions',
+                entite: $reception,
+                donneesApres: [
+                    'numero_reception' => $reception->numero_reception,
+                    'nb_lots_crees'    => $reception->lignes()->count(),
+                ],
+            );
 
             return $reception;
         });
