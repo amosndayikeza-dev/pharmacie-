@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Contrôle exactement ce qui est exposé au frontend.
  */
-class EspeceResource extends JsonResource
+class EspeceRessource extends JsonResource
 {
     public function toArray(Request $request): array
     {

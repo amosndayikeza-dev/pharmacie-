@@ -38,7 +38,7 @@ class MedicamentResource extends JsonResource
             ),
 
             // Relations (chargées à la demande)
-            'especes'                  => EspeceResource::collection($this->whenLoaded('especes')),
+            'especes'                  => EspeceRessource::collection($this->whenLoaded('especes')),
 
             // Timestamps
             'created_at'               => $this->created_at?->toISOString(),

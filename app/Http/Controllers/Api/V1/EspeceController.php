@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreEspeceRequest;
 use App\Http\Requests\Api\V1\UpdateEspeceRequest;
-use App\Http\Resources\EspeceResource;
+use App\Http\Resources\EspeceRessource;
 use App\Models\Espece;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,7 +36,7 @@ class EspeceController extends Controller
 
         $especes = $query->paginate($request->input('per_page', 20));
 
-        return EspeceResource::collection($especes);
+        return EspeceRessource::collection($especes);
     }
 
     /**
@@ -48,7 +48,7 @@ class EspeceController extends Controller
         $espece = Espece::with(['animaux', 'medicaments'])->findOrFail($id);
 
         return response()->json([
-            'data' => new EspeceResource($espece),
+            'data' => new EspeceRessource($espece),
         ]);
     }
 
@@ -62,7 +62,7 @@ class EspeceController extends Controller
 
         return response()->json([
             'message' => 'Espèce créée avec succès.',
-            'data'    => new EspeceResource($espece),
+            'data'    => new EspeceRessource($espece),
         ], 201);
     }
 
@@ -77,7 +77,7 @@ class EspeceController extends Controller
 
         return response()->json([
             'message' => 'Espèce modifiée avec succès.',
-            'data'    => new EspeceResource($espece->fresh()),
+            'data'    => new EspeceRessource($espece->fresh()),
         ]);
     }
 

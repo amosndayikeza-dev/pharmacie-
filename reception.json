@@ -1,0 +1,18 @@
+﻿{
+  "achat_id": 1,
+  "fournisseur_id": 1,
+  "date_reception": "2026-09-21",
+  "numero_bon_livraison": "BL-2026-001",
+  "observations": "Livraison complete",
+  "lignes": [
+    {
+      "ligne_achat_id": 1,
+      "medicament_id": 1,
+      "numero_lot": "LOT-2026-002",
+      "date_peremption": "2027-12-31",
+      "quantite_recue": 100,
+      "prix_achat_ht_unitaire": 1500,
+      "taux_tva": 0
+    }
+  ]
+}

@@ -142,4 +142,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/{id}/restore', [FournisseurController::class, 'restore'])->whereNumber('id')->name('restore');
         });
     });
+
+    
 });
