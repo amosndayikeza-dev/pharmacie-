@@ -1,0 +1,85 @@
+/* ============================================================
+   VENTES CSS
+   ============================================================ */
+
+.data-table td .btn-icon {
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    color: var(--color-text-muted);
+}
+
+.data-table td .btn-icon:hover {
+    color: var(--color-primary);
+    background: var(--color-primary-50);
+}
+
+.data-table td code {
+    background: var(--color-bg-dark);
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.8rem;
+    color: var(--color-primary-dark);
+    font-weight: 600;
+}
+
+/* Filtre date */
+.filter-date {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.filter-date:focus {
+    border-color: var(--color-primary);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Détail ticket */
+.ticket-header {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.ticket-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.ticket-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .toolbar-search,
+    .toolbar select,
+    .filter-date {
+        width: 100%;
+    }
+    .ticket-header,
+    .ticket-info {
+        grid-template-columns: 1fr;
+    }
+}

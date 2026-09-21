@@ -149,69 +149,89 @@ class AchatController extends Controller
      * ⚠️ RÈGLE : modification autorisée UNIQUEMENT si statut = 'brouillon'.
      */
     public function update(UpdateAchatRequest $request, int $id): JsonResponse
-    {
-        $achat = Achat::findOrFail($id);
+{
+    $achat = Achat::findOrFail($id);
+    $data  = $request->validated();
 
-        // Vérification du statut
-        if ($achat->statut !== 'brouillon') {
+    // ─────────────────────────────────────────────────────────
+    // Règles métier
+    // ─────────────────────────────────────────────────────────
+
+    // Les lignes ne peuvent être modifiées que si la commande est en brouillon
+    $modifieLignes = isset($data['lignes']);
+
+    if ($modifieLignes && $achat->statut !== 'brouillon') {
+        return response()->json([
+            'message' => 'Impossible de modifier les lignes d\'une commande qui n\'est plus en brouillon.',
+        ], 409);
+    }
+
+    // Si on essaie de repasser une commande "livree" ou "annulee" à un statut antérieur
+    // → on l'interdit (sauf admin exceptionnel, à adapter si besoin)
+    if (isset($data['statut'])) {
+        $statutsFinaux = ['livree', 'annulee'];
+        if (in_array($achat->statut, $statutsFinaux, true)
+            && $achat->statut !== $data['statut']) {
             return response()->json([
-                'message' => 'Impossible de modifier une commande qui n\'est plus en brouillon.',
+                'message' => 'Une commande ' . $achat->statut . ' ne peut plus changer de statut.',
             ], 409);
         }
-
-        $data = $request->validated();
-
-        DB::transaction(function () use ($achat, $data) {
-
-            // Mise à jour des champs simples
-            if (isset($data['date_livraison_prevue'])) {
-                $achat->date_livraison_prevue = $data['date_livraison_prevue'];
-            }
-            if (isset($data['notes'])) {
-                $achat->notes = $data['notes'];
-            }
-
-            // Mise à jour des lignes si fournies (remplacement complet)
-            if (isset($data['lignes'])) {
-                $achat->lignes()->delete();  // on supprime les anciennes lignes
-
-                $montantHt = 0;
-                $montantTva = 0;
-
-                foreach ($data['lignes'] as $ligne) {
-                    $ligneHt = $ligne['quantite_commandee'] * $ligne['prix_achat_ht_unitaire'];
-                    $ligneTva = $ligneHt * (($ligne['taux_tva'] ?? 0) / 100);
-
-                    $montantHt += $ligneHt;
-                    $montantTva += $ligneTva;
-
-                    LigneAchat::create([
-                        'achat_id'               => $achat->id,
-                        'medicament_id'          => $ligne['medicament_id'],
-                        'quantite_commandee'     => $ligne['quantite_commandee'],
-                        'quantite_recue'         => 0,
-                        'prix_achat_ht_unitaire' => $ligne['prix_achat_ht_unitaire'],
-                        'taux_tva'               => $ligne['taux_tva'] ?? 0,
-                        'montant_ht'             => $ligneHt,
-                        'montant_ttc'            => $ligneHt + $ligneTva,
-                    ]);
-                }
-
-                $achat->montant_total_ht  = $montantHt;
-                $achat->montant_total_tva = $montantTva;
-                $achat->montant_total_ttc = $montantHt + $montantTva;
-            }
-
-            $achat->save();
-        });
-
-        $achat->load(['fournisseur', 'utilisateur', 'lignes.medicament']);
-
-        return response()->json([
-            'message' => 'Commande modifiée avec succès.',
-            'data'    => new AchatResource($achat),
-        ]);
     }
+
+    // ─────────────────────────────────────────────────────────
+    // Mise à jour
+    // ─────────────────────────────────────────────────────────
+    DB::transaction(function () use ($achat, $data, $modifieLignes) {
+
+        // 1. Champs simples
+        foreach (['fournisseur_id', 'numero_commande', 'date_commande',
+                  'date_livraison_prevue', 'statut', 'notes'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $achat->{$field} = $data[$field];
+            }
+        }
+
+        // 2. Lignes (remplacement complet)
+        if ($modifieLignes) {
+            $achat->lignes()->delete();
+
+            $montantHt  = 0;
+            $montantTva = 0;
+
+            foreach ($data['lignes'] as $ligne) {
+                $ligneHt  = $ligne['quantite_commandee'] * $ligne['prix_achat_ht_unitaire'];
+                $ligneTva = $ligneHt * (($ligne['taux_tva'] ?? 0) / 100);
+
+                $montantHt  += $ligneHt;
+                $montantTva += $ligneTva;
+
+                LigneAchat::create([
+                    'achat_id'               => $achat->id,
+                    'medicament_id'          => $ligne['medicament_id'],
+                    'quantite_commandee'     => $ligne['quantite_commandee'],
+                    'quantite_recue'         => 0,
+                    'prix_achat_ht_unitaire' => $ligne['prix_achat_ht_unitaire'],
+                    'taux_tva'               => $ligne['taux_tva'] ?? 0,
+                    'montant_ht'             => $ligneHt,
+                    'montant_ttc'            => $ligneHt + $ligneTva,
+                ]);
+            }
+
+            $achat->montant_total_ht  = $montantHt;
+            $achat->montant_total_tva = $montantTva;
+            $achat->montant_total_ttc = $montantHt + $montantTva;
+        }
+
+        $achat->save();
+    });
+
+    $achat->load(['fournisseur', 'utilisateur', 'lignes.medicament']);
+
+    return response()->json([
+        'message' => 'Commande modifiée avec succès.',
+        'data'    => new AchatResource($achat),
+    ]);
+}
 
     /**
      * Supprimer une commande (soft delete).

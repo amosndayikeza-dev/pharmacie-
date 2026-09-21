@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espèces — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/especes.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Espèces</h1>
+                <p class="page-subtitle">Référentiel des espèces animales</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouvelle espèce
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, nom scientifique...">
+            </div>
+
+            <select id="filterCategorie">
+                <option value="">Toutes les catégories</option>
+                <option value="compagnie">Compagnie</option>
+                <option value="elevage">Élevage</option>
+                <option value="volaille">Volaille</option>
+                <option value="equin">Équin</option>
+                <option value="autre">Autre</option>
+            </select>
+
+            <select id="filterActif">
+                <option value="">Tous les statuts</option>
+                <option value="true">Actifs</option>
+                <option value="false">Inactifs</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="especesTable">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Nom scientifique</th>
+                            <th>Catégorie</th>
+                            <th>Description</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="especesTbody">
+                        <tr>
+                            <td colspan="6" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier une espèce
+     ============================================================ -->
+<div class="modal-overlay" id="especeModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="especes"></span>
+                <span id="modalTitle">Nouvelle espèce</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="especeForm">
+            <div class="modal-body">
+                <input type="hidden" id="especeId">
+
+                <div class="form-grid">
+                    <div class="form-field full-width">
+                        <label for="nom">Nom <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required maxlength="100" placeholder="Bovin, Chien, Poule...">
+                        <span class="field-error" data-error-for="nom"></span>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label for="nomScientifique">Nom scientifique</label>
+                        <input type="text" id="nomScientifique" name="nom_scientifique" maxlength="150" placeholder="Bos taurus, Canis lupus familiaris...">
+                        <span class="field-error" data-error-for="nom_scientifique"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="categorie">Catégorie <span class="required">*</span></label>
+                        <select id="categorie" name="categorie" required>
+                            <option value="">— Choisir —</option>
+                            <option value="compagnie">Compagnie</option>
+                            <option value="elevage">Élevage</option>
+                            <option value="volaille">Volaille</option>
+                            <option value="equin">Équin</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                        <span class="field-error" data-error-for="categorie"></span>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-checkbox" style="margin-top: 26px;">
+                            <input type="checkbox" id="actif" name="actif" checked>
+                            <span>Espèce active</span>
+                        </label>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" maxlength="1000" placeholder="Brève description de l'espèce..."></textarea>
+                        <span class="field-error" data-error-for="description"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">
+                    Annuler
+                </button>
+                <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/especes.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'especes',
+            title: 'Espèces',
+            breadcrumb: 'Référentiel',
+        });
+    });
+</script>
+
+</body>
+</html>

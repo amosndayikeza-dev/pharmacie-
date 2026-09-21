@@ -1,0 +1,133 @@
+/* ============================================================
+   LOGS CSS
+   ============================================================ */
+
+.data-table td .btn-icon {
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    color: var(--color-text-muted);
+}
+
+.data-table td .btn-icon:hover {
+    color: var(--color-primary);
+    background: var(--color-primary-50);
+}
+
+.data-table td code {
+    background: var(--color-bg-dark);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.75rem;
+    color: var(--color-primary-dark);
+    font-weight: 600;
+}
+
+.data-table small {
+    font-size: 0.75rem;
+    color: var(--color-text-soft);
+}
+
+/* Info banner */
+.info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.info-banner svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.info-banner-info {
+    background: #eff6ff;
+    color: #1e40af;
+    border-left: 4px solid #3b82f6;
+}
+
+/* Filtre date */
+.filter-date {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.filter-date:focus {
+    border-color: var(--color-primary);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* JSON avant/après */
+.json-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.json-block {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+
+.json-header {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.json-avant .json-header {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.json-apres .json-header {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.json-block pre {
+    margin: 0;
+    padding: 12px;
+    background: #f9fafb;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+    color: #1f2937;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .toolbar-search,
+    .toolbar select,
+    .filter-date {
+        width: 100%;
+    }
+    .json-split {
+        grid-template-columns: 1fr;
+    }
+}

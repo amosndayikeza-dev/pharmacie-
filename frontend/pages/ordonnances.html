@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordonnances — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/ordonnances.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Ordonnances</h1>
+                <p class="page-subtitle">Prescriptions vétérinaires</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouvelle ordonnance
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par numéro, diagnostic...">
+            </div>
+
+            <select id="filterVeterinaire">
+                <option value="">Tous les vétérinaires</option>
+            </select>
+
+            <select id="filterAnimal">
+                <option value="">Tous les animaux</option>
+            </select>
+
+            <select id="filterValidite">
+                <option value="">Toutes les ordonnances</option>
+                <option value="valides">Valides</option>
+                <option value="expirees">Expirées</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="ordonnancesTable">
+                    <thead>
+                        <tr>
+                            <th>N° ordonnance</th>
+                            <th>Animal</th>
+                            <th>Vétérinaire</th>
+                            <th>Date prescription</th>
+                            <th>Validité</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordonnancesTbody">
+                        <tr>
+                            <td colspan="6" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier une ordonnance
+     ============================================================ -->
+<div class="modal-overlay" id="ordonnanceModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="fileText"></span>
+                <span id="modalTitle">Nouvelle ordonnance</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="ordonnanceForm" style="display: contents;">
+            <div class="modal-body">
+                <input type="hidden" id="ordonnanceId">
+
+                <div class="form-grid">
+                    <!-- Animal -->
+                    <div class="form-field full-width">
+                        <label for="animalId">Animal <span class="required">*</span></label>
+                        <select id="animalId" name="animal_id" required>
+                            <option value="">— Choisir un animal —</option>
+                        </select>
+                        <span class="field-error" data-error-for="animal_id"></span>
+                    </div>
+
+                    <!-- Vétérinaire -->
+                    <div class="form-field">
+                        <label for="veterinaireId">Vétérinaire prescripteur</label>
+                        <select id="veterinaireId" name="veterinaire_id">
+                            <option value="">— Aucun —</option>
+                        </select>
+                        <span class="field-error" data-error-for="veterinaire_id"></span>
+                    </div>
+
+                    <!-- Numéro ordonnance -->
+                    <div class="form-field">
+                        <label for="numeroOrdonnance">N° ordonnance</label>
+                        <input type="text" id="numeroOrdonnance" name="numero_ordonnance" maxlength="100" placeholder="ORD-2026-001">
+                        <span class="field-error" data-error-for="numero_ordonnance"></span>
+                    </div>
+
+                    <!-- Date prescription -->
+                    <div class="form-field">
+                        <label for="datePrescription">Date de prescription <span class="required">*</span></label>
+                        <input type="date" id="datePrescription" name="date_prescription" required>
+                        <span class="field-error" data-error-for="date_prescription"></span>
+                    </div>
+
+                    <!-- Date fin validité -->
+                    <div class="form-field">
+                        <label for="dateFinValidite">Date de fin de validité</label>
+                        <input type="date" id="dateFinValidite" name="date_fin_validite">
+                        <span class="field-error" data-error-for="date_fin_validite"></span>
+                    </div>
+
+                    <!-- Diagnostic -->
+                    <div class="form-field full-width">
+                        <label for="diagnostic">Diagnostic</label>
+                        <textarea id="diagnostic" name="diagnostic" rows="2" placeholder="Diagnostic du vétérinaire..."></textarea>
+                        <span class="field-error" data-error-for="diagnostic"></span>
+                    </div>
+
+                    <!-- Observations -->
+                    <div class="form-field full-width">
+                        <label for="observations">Observations</label>
+                        <textarea id="observations" name="observations" rows="2" placeholder="Notes complémentaires..."></textarea>
+                        <span class="field-error" data-error-for="observations"></span>
+                    </div>
+
+                    <!-- Fichier scan -->
+                    <div class="form-field full-width">
+                        <label for="fichierScan">Scan de l'ordonnance (URL ou référence)</label>
+                        <input type="text" id="fichierScan" name="fichier_scan" maxlength="255" placeholder="Chemin vers le scan...">
+                        <span class="field-error" data-error-for="fichier_scan"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Annuler</button>
+                <button type="submit" form="ordonnanceForm" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/ordonnances.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'ordonnances',
+            title: 'Ordonnances',
+            breadcrumb: 'Prescriptions',
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,293 @@
+/* ============================================================
+   RAPPORTS CSS — Styles spécifiques
+   ============================================================ */
+
+/* ══════════════════════════════════════════════════════════
+   ONGLETS DE PÉRIODE
+   ══════════════════════════════════════════════════════════ */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    background: white;
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 2px;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+
+.tab:hover {
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.tab.active {
+    background: var(--color-primary);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+.tab svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════
+   INFO PÉRIODE
+   ══════════════════════════════════════════════════════════ */
+
+.period-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-left: 4px solid #3b82f6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 500;
+    color: #1e40af;
+    font-size: 0.95rem;
+}
+
+.period-info svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════
+   FIX FILTRE DATE
+   ══════════════════════════════════════════════════════════ */
+
+.filter-date {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-date:focus {
+    border-color: var(--color-primary);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOP MÉDICAMENT
+   ══════════════════════════════════════════════════════════ */
+
+.top-medicament {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-radius: 10px;
+    border: 1px solid #fde68a;
+}
+
+.top-med-rank {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.top-med-info strong {
+    display: block;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+.top-med-info small {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+}
+
+.top-med-qte {
+    text-align: right;
+}
+
+.top-med-qte strong {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #92400e;
+    line-height: 1;
+}
+
+.top-med-qte small {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RÉPARTITION PAIEMENTS
+   ══════════════════════════════════════════════════════════ */
+
+.repartition-ligne {
+    display: grid;
+    grid-template-columns: 1fr 3fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.repartition-ligne:last-child {
+    border-bottom: none;
+}
+
+.repartition-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    min-width: 0;
+}
+
+.repartition-label span:first-child {
+    font-size: 1.1rem;
+}
+
+.repartition-label span:nth-child(2) {
+    color: var(--color-text);
+    flex: 1;
+}
+
+.repartition-label strong {
+    color: var(--color-text);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.repartition-bar {
+    height: 8px;
+    background: var(--color-bg-dark);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.repartition-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.repartition-pct {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    min-width: 50px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════
+   DÉTAILS PAR MODE DE PAIEMENT
+   ══════════════════════════════════════════════════════════ */
+
+.stat-simple {
+    text-align: center;
+    padding: 12px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+    .repartition-ligne {
+        grid-template-columns: 1fr 2fr auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .tabs {
+        padding: 4px;
+    }
+
+    .tab {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .tab svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .repartition-ligne {
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+    }
+
+    .repartition-label span:nth-child(2) {
+        display: none;
+    }
+
+    .repartition-bar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .top-medicament {
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+    }
+
+    .top-med-qte {
+        grid-column: 1 / -1;
+        text-align: left;
+        padding-top: 8px;
+        border-top: 1px solid #fde68a;
+    }
+
+    #customDateToolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #customDateToolbar input,
+    #customDateToolbar button {
+        width: 100%;
+    }
+}

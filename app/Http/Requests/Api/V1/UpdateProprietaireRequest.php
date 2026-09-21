@@ -6,6 +6,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validation pour la modification d'un propriétaire (API).
+ *
+ * Utilise 'sometimes' pour supporter les PATCH partiels.
  */
 class UpdateProprietaireRequest extends FormRequest
 {
@@ -17,33 +19,34 @@ class UpdateProprietaireRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type'                    => ['sometimes', 'in:particulier,ferme,clinique,societe'],
-            'nom'                     => ['sometimes', 'required', 'string', 'max:100'],
-            'prenom'                  => ['nullable', 'string', 'max:100'],
-            'raison_sociale'          => ['nullable', 'string', 'max:200'],
-            'date_naissance'          => ['nullable', 'date', 'before:today'],
-            'sexe'                    => ['nullable', 'in:M,F,Autre'],
-            'telephone'               => ['nullable', 'string', 'max:30'],
-            'email'                   => ['nullable', 'email', 'max:150'],
-            'adresse'                 => ['nullable', 'string'],
-            'ville'                   => ['nullable', 'string', 'max:100'],
-            'province'                => ['nullable', 'string', 'max:100'],
-            'pays'                    => ['nullable', 'string', 'max:100'],
-            'numero_piece_identite'   => ['nullable', 'string', 'max:50'],
-            'numero_contribuable'     => ['nullable', 'string', 'max:50'],
-            'consentement_rgpd'       => ['sometimes', 'boolean'],
-            'date_consentement'       => ['nullable', 'date'],
-            'notes'                   => ['nullable', 'string'],
+            'type'                  => ['sometimes', 'required', 'in:particulier,ferme,clinique,societe'],
+            'nom'                   => ['sometimes', 'required', 'string', 'max:100'],
+            'prenom'                => ['nullable', 'string', 'max:100'],
+            'raison_sociale'        => ['nullable', 'string', 'max:200'],
+            'date_naissance'        => ['nullable', 'date', 'before:today'],
+            'sexe'                  => ['nullable', 'in:M,F,Autre'],
+            'telephone'             => ['nullable', 'string', 'max:30'],
+            'email'                 => ['nullable', 'email', 'max:150'],
+            'adresse'               => ['nullable', 'string', 'max:500'],
+            'ville'                 => ['nullable', 'string', 'max:100'],
+            'province'              => ['nullable', 'string', 'max:100'],
+            'pays'                  => ['nullable', 'string', 'max:100'],
+            'numero_piece_identite' => ['nullable', 'string', 'max:50'],
+            'numero_contribuable'   => ['nullable', 'string', 'max:50'],
+            'consentement_rgpd'     => ['sometimes', 'boolean'],
+            'notes'                 => ['nullable', 'string', 'max:2000'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'type.in'             => 'Le type doit être : particulier, ferme, clinique ou société.',
-            'nom.required'        => 'Le nom est obligatoire.',
-            'email.email'         => 'L\'email n\'est pas valide.',
-            'date_naissance.before' => 'La date de naissance doit être dans le passé.',
+            'type.in'                => 'Le type doit être : particulier, ferme, clinique ou société.',
+            'nom.required'           => 'Le nom est obligatoire.',
+            'nom.max'                => 'Le nom ne peut pas dépasser 100 caractères.',
+            'email.email'            => 'L\'adresse email n\'est pas valide.',
+            'date_naissance.before'  => 'La date de naissance doit être dans le passé.',
+            'sexe.in'                => 'Le sexe doit être M, F ou Autre.',
         ];
     }
 }

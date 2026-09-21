@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/logs.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Journal d'audit</h1>
+                <p class="page-subtitle">Historique des actions utilisateurs (RGPD)</p>
+            </div>
+        </div>
+
+        <!-- Info banner -->
+        <div class="info-banner info-banner-info">
+            <span data-icon="info"></span>
+            <div>
+                <strong>Journal insert-only</strong> : tous les logs sont immuables.
+                La rétention est configurée côté serveur (3 à 5 ans selon la politique RGPD).
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <section class="stats-grid">
+            <article class="stat-card stat-info">
+                <div class="stat-icon" data-icon="list"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Total logs (page)</span>
+                    <span class="stat-value" id="statTotal">—</span>
+                    <span class="stat-sub">Sur la période visible</span>
+                </div>
+            </article>
+            <article class="stat-card stat-success">
+                <div class="stat-icon" data-icon="check"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Créations</span>
+                    <span class="stat-value" id="statCreations">—</span>
+                    <span class="stat-sub">creation_*</span>
+                </div>
+            </article>
+            <article class="stat-card stat-warning">
+                <div class="stat-icon" data-icon="edit"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Modifications</span>
+                    <span class="stat-value" id="statModifications">—</span>
+                    <span class="stat-sub">modification_*</span>
+                </div>
+            </article>
+            <article class="stat-card stat-danger">
+                <div class="stat-icon" data-icon="trash"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Suppressions</span>
+                    <span class="stat-value" id="statSuppressions">—</span>
+                    <span class="stat-sub">suppression_*</span>
+                </div>
+            </article>
+        </section>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par action, module...">
+            </div>
+
+            <select id="filterModule">
+                <option value="">Tous les modules</option>
+                <option value="ventes">Ventes</option>
+                <option value="medicaments">Médicaments</option>
+                <option value="receptions">Réceptions</option>
+                <option value="proprietaires">Propriétaires</option>
+                <option value="users">Utilisateurs</option>
+                <option value="auth">Authentification</option>
+            </select>
+
+            <input type="date" id="filterDateDebut" class="filter-date" title="Date de début">
+            <input type="date" id="filterDateFin" class="filter-date" title="Date de fin">
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>Date / Heure</th>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                            <th>Module</th>
+                            <th>Entité concernée</th>
+                            <th>IP</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTbody">
+                        <tr><td colspan="7" class="empty"><div class="spinner" style="margin: 20px auto;"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- ============================================================
+     MODAL : Détail d'un log
+     ============================================================ -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="list"></span>
+                Détail du log
+            </h3>
+            <button class="modal-close" id="detailCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body" id="detailBody">
+            <div class="spinner" style="margin: 20px auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="detailCloseBtn2">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/logs.js"></script>
+
+<script>
+    Guard.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'logs',
+            title: 'Logs',
+            breadcrumb: 'Audit RGPD',
+        });
+    });
+</script>
+
+</body>
+</html>

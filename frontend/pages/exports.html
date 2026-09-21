@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exports — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/exports.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Exports</h1>
+                <p class="page-subtitle">Téléchargement des fichiers CSV compatibles Excel</p>
+            </div>
+        </div>
+
+        <!-- Info banner -->
+        <div class="info-banner info-banner-info">
+            <span data-icon="info"></span>
+            <div>
+                <strong>Exports comptables</strong> : fichiers au format <code>CSV</code> (séparateur <code>;</code>)
+                exploitables directement par Excel, LibreOffice ou Google Sheets.
+            </div>
+        </div>
+
+        <!-- Cartes d'export -->
+        <section class="exports-grid">
+
+            <!-- Ventes -->
+            <article class="card export-card">
+                <div class="export-icon export-icon-success">
+                    <span data-icon="receipt"></span>
+                </div>
+                <div class="export-body">
+                    <h3>Ventes (CSV)</h3>
+                    <p>Export détaillé de toutes les ventes sur une période</p>
+
+                    <div class="export-dates">
+                        <div class="form-field">
+                            <label for="ventesDateDebut">Date de début</label>
+                            <input type="date" id="ventesDateDebut">
+                        </div>
+                        <div class="form-field">
+                            <label for="ventesDateFin">Date de fin</label>
+                            <input type="date" id="ventesDateFin">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="exportVentesBtn">
+                        <span data-icon="download"></span>
+                        Télécharger .csv
+                    </button>
+                </div>
+            </article>
+
+            <!-- Stock -->
+            <article class="card export-card">
+                <div class="export-icon export-icon-info">
+                    <span data-icon="lots"></span>
+                </div>
+                <div class="export-body">
+                    <h3>Stock actuel (CSV)</h3>
+                    <p>Inventaire complet des lots en stock avec valorisation</p>
+
+                    <div class="export-info">
+                        <span data-icon="check"></span>
+                        Tous les lots avec quantité restante &gt; 0
+                    </div>
+
+                    <button class="btn btn-primary" id="exportStockBtn">
+                        <span data-icon="download"></span>
+                        Télécharger .csv
+                    </button>
+                </div>
+            </article>
+
+            <!-- Lots périmés -->
+            <article class="card export-card">
+                <div class="export-icon export-icon-danger">
+                    <span data-icon="alert"></span>
+                </div>
+                <div class="export-body">
+                    <h3>Lots périmés (CSV)</h3>
+                    <p>Liste des lots à retirer du stock avec valeur perdue</p>
+
+                    <div class="export-info export-info-danger">
+                        <span data-icon="alert"></span>
+                        Action recommandée : retirer ces lots du stock
+                    </div>
+
+                    <button class="btn btn-danger" id="exportLotsPerimesBtn">
+                        <span data-icon="download"></span>
+                        Télécharger .csv
+                    </button>
+                </div>
+            </article>
+
+            <!-- Rapport PDF (désactivé) -->
+            <article class="card export-card">
+                <div class="export-icon export-icon-warning">
+                    <span data-icon="fileText"></span>
+                </div>
+                <div class="export-body">
+                    <h3>Rapport journalier (PDF)</h3>
+                    <p>Rapport d'activité d'une journée au format PDF</p>
+
+                    <div class="form-field">
+                        <label for="rapportDate">Date du rapport</label>
+                        <input type="date" id="rapportDate">
+                    </div>
+
+                    <button class="btn btn-secondary" id="exportRapportPdfBtn" disabled>
+                        <span data-icon="printer"></span>
+                        Non disponible
+                    </button>
+
+                    <small class="text-muted" style="font-size: 0.75rem; text-align: center;">
+                        Nécessite l'installation de dompdf
+                    </small>
+                </div>
+            </article>
+
+        </section>
+
+        <!-- Info -->
+        <article class="card" style="margin-top: 24px;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span data-icon="info"></span>
+                    Informations
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted" style="font-size: 0.9rem; line-height: 1.6;">
+                    Les exports sont générés <strong>à la demande</strong> et ne sont pas conservés sur le serveur.
+                    Enregistre le fichier localement après téléchargement.
+                    <br><br>
+                    <strong>Format CSV</strong> : ouvre directement avec Excel (double-clic).
+                    Les colonnes sont séparées par <code>;</code> et le fichier contient un BOM UTF-8 pour
+                    l'affichage correct des accents.
+                </p>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/exports.js"></script>
+
+<script>
+    Guard.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'exports',
+            title: 'Exports',
+            breadcrumb: 'Comptabilité',
+        });
+    });
+</script>
+
+</body>
+</html>

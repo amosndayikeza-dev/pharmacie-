@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapports — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/rapports.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Rapports</h1>
+                <p class="page-subtitle">Analyses et statistiques d'activité</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary" id="genererBtn">
+                    <span data-icon="refresh"></span>
+                    Générer les rapports
+                </button>
+            </div>
+        </div>
+
+        <!-- Onglets période -->
+        <div class="tabs" id="tabs">
+            <button class="tab active" data-period="jour">Aujourd'hui</button>
+            <button class="tab" data-period="hebdo">Cette semaine</button>
+            <button class="tab" data-period="mensuel">Ce mois</button>
+            <button class="tab" data-period="annuel">Cette année</button>
+            <button class="tab" data-period="custom">
+                <span data-icon="calendar"></span>
+                Période personnalisée
+            </button>
+        </div>
+
+        <!-- Sélecteur de date personnalisé -->
+        <div class="toolbar" id="customDateToolbar" hidden>
+            <input type="date" id="dateDebut" class="filter-date">
+            <span class="text-muted">au</span>
+            <input type="date" id="dateFin" class="filter-date">
+            <button class="btn btn-primary" id="chargerCustomBtn">
+                <span data-icon="check"></span>
+                Charger
+            </button>
+        </div>
+
+        <!-- Loader -->
+        <div id="loader" class="loader">
+            <div class="spinner"></div>
+            <span>Chargement des rapports...</span>
+        </div>
+
+        <!-- Contenu -->
+        <div id="content" hidden>
+
+            <!-- Info période -->
+            <div class="period-info">
+                <span data-icon="calendar"></span>
+                <span id="periodLabel">—</span>
+            </div>
+
+            <!-- Cartes stats -->
+            <section class="stats-grid" id="statsGrid">
+                <article class="stat-card stat-primary">
+                    <div class="stat-icon" data-icon="money"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Chiffre d'affaires TTC</span>
+                        <span class="stat-value" id="statCaTtc">—</span>
+                        <span class="stat-sub" id="statCaHt">—</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-success">
+                    <div class="stat-icon" data-icon="trophy"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Marge brute</span>
+                        <span class="stat-value" id="statMarge">—</span>
+                        <span class="stat-sub" id="statMargePct">—</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-info">
+                    <div class="stat-icon" data-icon="receipt"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Tickets</span>
+                        <span class="stat-value" id="statTickets">—</span>
+                        <span class="stat-sub" id="statClients">—</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-warning">
+                    <div class="stat-icon" data-icon="caisse"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Panier moyen</span>
+                        <span class="stat-value" id="statPanier">—</span>
+                        <span class="stat-sub">Par ticket</span>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Deux colonnes -->
+            <section class="grid-2">
+
+                <!-- Top médicament -->
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="trophy"></span>
+                            Top médicament
+                        </h3>
+                    </div>
+                    <div class="card-body" id="topMedicamentCard">
+                        <p class="empty">—</p>
+                    </div>
+                </article>
+
+                <!-- Répartition paiements -->
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="money"></span>
+                            Répartition par paiement
+                        </h3>
+                    </div>
+                    <div class="card-body" id="repartitionPaiements">
+                        <p class="empty">—</p>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- Détails par mode de paiement -->
+            <section class="grid-3">
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Espèces</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-simple" id="detailEspeces">—</div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Carte</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-simple" id="detailCarte">—</div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Mobile Money</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-simple" id="detailMobile">—</div>
+                    </div>
+                </article>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/rapports.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'rapports',
+            title: 'Rapports',
+            breadcrumb: 'Analyses',
+        });
+    });
+</script>
+
+</body>
+</html>

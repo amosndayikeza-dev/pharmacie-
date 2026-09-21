@@ -126,4 +126,56 @@ class ProprietaireController extends Controller
             'message' => 'Propriétaire supprimé.',
         ]);
     }
+
+        // ============================================================
+    // MÉTHODES SPÉCIALES
+    // ============================================================
+
+    /**
+     * Liste des villes distinctes (pour le filtre frontend).
+     *
+     * GET /api/v1/proprietaires/villes
+     */
+    public function villes(): JsonResponse
+    {
+        $villes = Proprietaire::whereNotNull('ville')
+            ->where('ville', '!=', '')
+            ->distinct()
+            ->orderBy('ville')
+            ->pluck('ville')
+            ->values();
+
+        return response()->json([
+            'data' => $villes,
+        ]);
+    }
+
+    /**
+     * Liste des types possibles (pour le filtre frontend).
+     *
+     * GET /api/v1/proprietaires/types
+     */
+    public function types(): JsonResponse
+    {
+        return response()->json([
+            'data' => ['particulier', 'ferme', 'clinique', 'societe'],
+        ]);
+    }
+
+    /**
+     * Restaurer un propriétaire supprimé (soft delete).
+     *
+     * POST /api/v1/proprietaires/{id}/restore
+     * Rôle requis : Administrateur
+     */
+    public function restore(int $id): JsonResponse
+    {
+        $proprietaire = Proprietaire::withTrashed()->findOrFail($id);
+        $proprietaire->restore();
+
+        return response()->json([
+            'message' => 'Propriétaire restauré.',
+            'data'    => new ProprietaireResource($proprietaire),
+        ]);
+    }
 }

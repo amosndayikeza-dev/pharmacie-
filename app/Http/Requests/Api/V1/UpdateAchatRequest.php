@@ -21,20 +21,25 @@ class UpdateAchatRequest extends FormRequest
         return true;
     }
 
-    public function rules(): array
-    {
-        return [
-            'date_livraison_prevue'  => ['nullable', 'date'],
-            'notes'                  => ['nullable', 'string'],
+public function rules(): array
+{
+    return [
+        // Champs modifiables
+        'fournisseur_id'         => ['sometimes', 'integer', 'exists:fournisseurs,id'],
+        'numero_commande'        => ['sometimes', 'string', 'max:50'],
+        'date_commande'          => ['sometimes', 'date'],
+        'date_livraison_prevue'  => ['nullable', 'date'],
+        'statut'                 => ['sometimes', 'in:brouillon,envoyee,partiellement_livree,livree,annulee'],
+        'notes'                  => ['nullable', 'string', 'max:2000'],
 
-            // On peut modifier les lignes uniquement en brouillon
-            'lignes'                          => ['sometimes', 'array', 'min:1'],
-            'lignes.*.medicament_id'          => ['required_with:lignes', 'integer', 'exists:medicaments,id'],
-            'lignes.*.quantite_commandee'     => ['required_with:lignes', 'integer', 'min:1'],
-            'lignes.*.prix_achat_ht_unitaire' => ['required_with:lignes', 'numeric', 'min:0'],
-            'lignes.*.taux_tva'               => ['nullable', 'numeric', 'min:0', 'max:100'],
-        ];
-    }
+        // Lignes de commande (modifiables uniquement en brouillon — logique métier dans le controller)
+        'lignes'                          => ['sometimes', 'array', 'min:1'],
+        'lignes.*.medicament_id'          => ['required_with:lignes', 'integer', 'exists:medicaments,id'],
+        'lignes.*.quantite_commandee'     => ['required_with:lignes', 'integer', 'min:1'],
+        'lignes.*.prix_achat_ht_unitaire' => ['required_with:lignes', 'numeric', 'min:0'],
+        'lignes.*.taux_tva'               => ['nullable', 'numeric', 'min:0', 'max:100'],
+    ];
+}
 
     public function messages(): array
     {

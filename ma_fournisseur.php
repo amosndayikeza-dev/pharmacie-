@@ -25,10 +25,10 @@ class FournisseurController extends Controller
      * GET /api/v1/fournisseurs
      *
      * Query params :
-     *   - search   : recherche sur nom, raison sociale, email, téléphone
-     *   - ville    : filtre par ville
-     *   - actif    : true/false
-     *   - per_page : nombre par page (défaut 20, max 100)
+     *   - search : recherche sur nom, raison sociale, email
+     *   - ville  : filtre par ville
+     *   - actif  : true/false
+     *   - per_page : nombre par page (défaut 20)
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -52,7 +52,9 @@ class FournisseurController extends Controller
 
         $perPage = min((int) $request->input('per_page', 20), 100);
 
-        return FournisseurResource::collection($query->paginate($perPage));
+        $fournisseurs = $query->paginate($perPage);
+
+        return FournisseurResource::collection($fournisseurs);
     }
 
     /**

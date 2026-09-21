@@ -35,6 +35,10 @@ const Components = {
                     { href: 'lots.html',         icon: 'lots',         label: 'Lots & Stock', badgeId: 'badgeAlertes' },
                     { href: 'animaux.html',      icon: 'animaux',      label: 'Animaux' },
                     { href: 'proprietaires.html', icon: 'proprietaires', label: 'Propriétaires' },
+                    { href: 'especes.html', icon: 'especes', label: 'Espèces' },
+                    { href: 'ordonnances.html', icon: 'fileText', label: 'Ordonnances' },
+                    { href: 'vaccinations.html', icon: 'syringe', label: 'Vaccinations' },
+                    { href: 'mouvements.html', icon: 'refresh', label: 'Mouvements stock' },
                 ],
             },
             {
@@ -45,6 +49,10 @@ const Components = {
                     { href: 'utilisateurs.html', icon: 'utilisateurs', label: 'Utilisateurs' },
                     { href: 'parametres.html',   icon: 'parametres',   label: 'Paramètres' },
                     { href: 'veterinaires.html', icon: 'stethoscope', label: 'Vétérinaires' },
+                    { href: 'fournisseurs.html', icon: 'fournisseurs', label: 'Fournisseurs' },
+                    { href: 'receptions.html', icon: 'truck', label: 'Réceptions' },
+                    { href: 'logs.html', icon: 'list', label: 'Logs (Audit)' },
+                    { href: 'exports.html', icon: 'download', label: 'Exports' },
                 ],
             },
         ];

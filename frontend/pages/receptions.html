@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réceptions — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/receptions.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Réceptions</h1>
+                <p class="page-subtitle">Entrées physiques de marchandises</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouvelle réception
+                </button>
+            </div>
+        </div>
+
+        <!-- Bannière info -->
+        <div class="info-banner" style="margin-bottom: 20px;">
+            <span data-icon="info"></span>
+            <div>
+                <strong>Cycle d'une réception</strong> :
+                <code>brouillon</code> → <code>validée</code> (crée les lots et augmente le stock).
+                Une fois validée, elle ne peut plus être modifiée.
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <section class="stats-grid">
+            <article class="stat-card stat-warning">
+                <div class="stat-icon" data-icon="clock"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Brouillons</span>
+                    <span class="stat-value" id="statBrouillon">—</span>
+                    <span class="stat-sub">À valider</span>
+                </div>
+            </article>
+            <article class="stat-card stat-success">
+                <div class="stat-icon" data-icon="check"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Validées</span>
+                    <span class="stat-value" id="statValidees">—</span>
+                    <span class="stat-sub">Stock mis à jour</span>
+                </div>
+            </article>
+            <article class="stat-card stat-primary">
+                <div class="stat-icon" data-icon="money"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Total TTC</span>
+                    <span class="stat-value" id="statMontant">—</span>
+                    <span class="stat-sub">Toutes réceptions</span>
+                </div>
+            </article>
+            <article class="stat-card stat-info">
+                <div class="stat-icon" data-icon="truck"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Ce mois</span>
+                    <span class="stat-value" id="statMois">—</span>
+                    <span class="stat-sub">Réceptions validées</span>
+                </div>
+            </article>
+        </section>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par n° réception, bon de livraison...">
+            </div>
+
+            <select id="filterFournisseur">
+                <option value="">Tous les fournisseurs</option>
+            </select>
+
+            <select id="filterStatut">
+                <option value="">Tous les statuts</option>
+                <option value="brouillon">Brouillon</option>
+                <option value="validee">Validée</option>
+                <option value="annulee">Annulée</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="receptionsTable">
+                    <thead>
+                        <tr>
+                            <th>N° réception</th>
+                            <th>Fournisseur</th>
+                            <th>Date</th>
+                            <th>Bon de livraison</th>
+                            <th class="text-right">Montant TTC</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receptionsTbody">
+                        <tr>
+                            <td colspan="7" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier une réception
+     ============================================================ -->
+<div class="modal-overlay" id="receptionModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="truck"></span>
+                <span id="modalTitle">Nouvelle réception</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="receptionForm" style="display: contents;">
+            <div class="modal-body">
+                <input type="hidden" id="receptionId">
+
+                <div class="form-grid">
+                    <!-- Commande liée (optionnel) -->
+                    <div class="form-field full-width">
+                        <label for="achatId">Commande liée (optionnel)</label>
+                        <select id="achatId" name="achat_id">
+                            <option value="">— Aucune (réception hors commande) —</option>
+                        </select>
+                        <span class="field-hint">Sélectionnez une commande pour pré-remplir les lignes.</span>
+                        <span class="field-error" data-error-for="achat_id"></span>
+                    </div>
+
+                    <!-- Fournisseur -->
+                    <div class="form-field full-width">
+                        <label for="fournisseurId">Fournisseur <span class="required">*</span></label>
+                        <select id="fournisseurId" name="fournisseur_id" required>
+                            <option value="">— Choisir un fournisseur —</option>
+                        </select>
+                        <span class="field-error" data-error-for="fournisseur_id"></span>
+                    </div>
+
+                    <!-- Numéro réception -->
+                    <div class="form-field">
+                        <label for="numeroReception">N° réception <span class="required">*</span></label>
+                        <input type="text" id="numeroReception" name="numero_reception" required maxlength="50" placeholder="REC-2026-001">
+                        <span class="field-error" data-error-for="numero_reception"></span>
+                    </div>
+
+                    <!-- Date réception -->
+                    <div class="form-field">
+                        <label for="dateReception">Date de réception <span class="required">*</span></label>
+                        <input type="date" id="dateReception" name="date_reception" required>
+                        <span class="field-error" data-error-for="date_reception"></span>
+                    </div>
+
+                    <!-- Numéro bon de livraison -->
+                    <div class="form-field">
+                        <label for="numeroBonLivraison">N° bon de livraison</label>
+                        <input type="text" id="numeroBonLivraison" name="numero_bon_livraison" maxlength="100" placeholder="BL-2026-001">
+                        <span class="field-error" data-error-for="numero_bon_livraison"></span>
+                    </div>
+
+                    <!-- Observations -->
+                    <div class="form-field full-width">
+                        <label for="observations">Observations</label>
+                        <textarea id="observations" name="observations" rows="2" placeholder="Notes sur la réception..."></textarea>
+                        <span class="field-error" data-error-for="observations"></span>
+                    </div>
+                </div>
+
+                <div class="info-banner" style="margin-top: 20px;">
+                    <span data-icon="info"></span>
+                    <div>
+                        <strong>Lignes de réception</strong> : chaque ligne crée un lot physique au moment de la validation.
+                    </div>
+                </div>
+
+                <!-- Lignes -->
+                <div class="lignes-section">
+                    <div class="lignes-header">
+                        <h4>Lignes de réception</h4>
+                        <button type="button" class="btn btn-sm btn-secondary" id="addLigneBtn">
+                            <span data-icon="plus"></span>
+                            Ajouter une ligne
+                        </button>
+                    </div>
+                    <div id="lignesContainer">
+                        <!-- Injecté dynamiquement -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Annuler</button>
+                <button type="submit" form="receptionForm" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Détail d'une réception
+     ============================================================ -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="truck"></span>
+                Réception <span id="detailNumero">—</span>
+            </h3>
+            <button class="modal-close" id="detailCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body" id="detailBody">
+            <div class="spinner" style="margin: 20px auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="detailEditBtn">
+                <span data-icon="edit"></span>
+                Modifier
+            </button>
+            <button type="button" class="btn btn-primary" id="detailCloseBtn2">
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/receptions.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'receptions',
+            title: 'Réceptions',
+            breadcrumb: 'Approvisionnement',
+        });
+    });
+</script>
+
+</body>
+</html>

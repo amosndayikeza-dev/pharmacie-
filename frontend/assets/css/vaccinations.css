@@ -1,0 +1,75 @@
+/* ============================================================
+   VACCINATIONS CSS — Styles spécifiques
+   ============================================================ */
+
+.data-table td .btn-icon {
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    color: var(--color-text-muted);
+}
+
+.data-table td .btn-icon:hover {
+    color: var(--color-primary);
+    background: var(--color-primary-50);
+}
+
+.data-table td .btn-icon[data-action="delete"]:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+.data-table small {
+    font-size: 0.75rem;
+    color: var(--color-text-soft);
+}
+
+/* Bannière d'alerte retard */
+.alert-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.alert-banner svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.alert-banner-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 4px solid #dc2626;
+}
+
+.alert-banner-danger .btn {
+    margin-left: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .toolbar-search,
+    .toolbar select {
+        width: 100%;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .page-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    .page-actions .btn {
+        width: 100%;
+    }
+}

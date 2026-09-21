@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventes — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/ventes.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Ventes</h1>
+                <p class="page-subtitle">Historique des ventes et tickets</p>
+            </div>
+            <div class="page-actions">
+                <a href="caisse.html" class="btn btn-primary">
+                    <span data-icon="caisse"></span>
+                    Ouvrir la caisse
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <section class="stats-grid">
+            <article class="stat-card stat-primary">
+                <div class="stat-icon" data-icon="money"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Ventes du jour</span>
+                    <span class="stat-value" id="statCaJour">—</span>
+                    <span class="stat-sub" id="statTicketsJour">—</span>
+                </div>
+            </article>
+            <article class="stat-card stat-info">
+                <div class="stat-icon" data-icon="receipt"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Total tickets</span>
+                    <span class="stat-value" id="statTotal">—</span>
+                    <span class="stat-sub">Toutes périodes</span>
+                </div>
+            </article>
+            <article class="stat-card stat-success">
+                <div class="stat-icon" data-icon="calendar"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Ventes du mois</span>
+                    <span class="stat-value" id="statMois">—</span>
+                    <span class="stat-sub">Mois en cours</span>
+                </div>
+            </article>
+            <article class="stat-card stat-warning">
+                <div class="stat-icon" data-icon="alert"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Avoirs / Annulations</span>
+                    <span class="stat-value" id="statAvoirs">—</span>
+                    <span class="stat-sub">À examiner</span>
+                </div>
+            </article>
+        </section>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par n° ticket, client...">
+            </div>
+
+            <input type="date" id="filterDate" class="filter-date" placeholder="Date">
+
+            <select id="filterStatut">
+                <option value="">Tous les statuts</option>
+                <option value="validee">Validée</option>
+                <option value="annulee">Annulée</option>
+                <option value="avoir">Avoir</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="ventesTable">
+                    <thead>
+                        <tr>
+                            <th>N° ticket</th>
+                            <th>Client</th>
+                            <th>Animal</th>
+                            <th>Date / Heure</th>
+                            <th class="text-right">Montant TTC</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ventesTbody">
+                        <tr><td colspan="7" class="empty"><div class="spinner" style="margin: 20px auto;"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- ============================================================
+     MODAL : Détail d'une vente
+     ============================================================ -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="receipt"></span>
+                Ticket <span id="detailNumero">—</span>
+            </h3>
+            <button class="modal-close" id="detailCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body" id="detailBody">
+            <div class="spinner" style="margin: 20px auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="detailPrintBtn">
+                <span data-icon="printer"></span>
+                Imprimer
+            </button>
+            <button type="button" class="btn btn-primary" id="detailCloseBtn2">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/ventes.js"></script>
+
+<script>
+    Guard.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'ventes',
+            title: 'Ventes',
+            breadcrumb: 'Historique',
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -12,6 +12,12 @@ class Log extends Model
 {
     protected $table = 'logs';
 
+    /**
+     * ⚠️ Désactive les timestamps Laravel.
+     * La table `logs` utilise uniquement `date_heure`.
+     */
+    public $timestamps = false;
+
     protected $fillable = [
         'utilisateur_id', 'action', 'module',
         'entite_type', 'entite_id',
@@ -35,8 +41,6 @@ class Log extends Model
             throw new \RuntimeException('Un log ne peut pas être supprimé.');
         });
     }
-
-    // === RELATIONS ===
 
     public function utilisateur(): BelongsTo
     {

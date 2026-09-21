@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lots & Stock — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/lots.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Lots & Stock</h1>
+                <p class="page-subtitle">Gestion FEFO des lots de médicaments</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouveau lot (entrée stock)
+                </button>
+            </div>
+        </div>
+
+        <!-- Bannière alertes -->
+        <div id="alertBanner" class="alert-banner" style="display: none;">
+            <div class="alert-banner-content">
+                <span data-icon="alert"></span>
+                <div id="alertBannerText">—</div>
+            </div>
+            <div class="alert-banner-actions">
+                <button class="btn btn-sm btn-secondary" data-filter="perimes">Périmés</button>
+                <button class="btn btn-sm btn-secondary" data-filter="j7">J-7</button>
+                <button class="btn btn-sm btn-secondary" data-filter="j30">J-30</button>
+            </div>
+        </div>
+
+        <!-- Stats rapides -->
+        <section class="stats-grid" id="statsGrid">
+            <article class="stat-card stat-danger">
+                <div class="stat-icon" data-icon="alert"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Lots périmés</span>
+                    <span class="stat-value" id="statPerimes">—</span>
+                    <span class="stat-sub">À retirer du stock</span>
+                </div>
+            </article>
+            <article class="stat-card stat-warning">
+                <div class="stat-icon" data-icon="clock"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Expirent J-7</span>
+                    <span class="stat-value" id="statJ7">—</span>
+                    <span class="stat-sub">Critique</span>
+                </div>
+            </article>
+            <article class="stat-card stat-info">
+                <div class="stat-icon" data-icon="calendar"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Expirent J-30</span>
+                    <span class="stat-value" id="statJ30">—</span>
+                    <span class="stat-sub">À surveiller</span>
+                </div>
+            </article>
+            <article class="stat-card stat-success">
+                <div class="stat-icon" data-icon="lots"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Lots actifs</span>
+                    <span class="stat-value" id="statActifs">—</span>
+                    <span class="stat-sub">En stock</span>
+                </div>
+            </article>
+        </section>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par n° lot, médicament...">
+            </div>
+
+            <select id="filterMedicament">
+                <option value="">Tous les médicaments</option>
+            </select>
+
+            <select id="filterFournisseur">
+                <option value="">Tous les fournisseurs</option>
+            </select>
+
+            <select id="filterPeremption">
+                <option value="">Toutes les péremptions</option>
+                <option value="perimes">Périmés</option>
+                <option value="j7">Expirent dans 7 jours</option>
+                <option value="j30">Expirent dans 30 jours</option>
+                <option value="ok">Péremption OK (&gt; 30j)</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="lotsTable">
+                    <thead>
+                        <tr>
+                            <th>N° lot</th>
+                            <th>Médicament</th>
+                            <th>Fournisseur</th>
+                            <th>Péremption</th>
+                            <th class="text-right">Stock</th>
+                            <th class="text-right">Prix achat</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lotsTbody">
+                        <tr>
+                            <td colspan="8" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer un lot (entrée de stock)
+     ============================================================ -->
+<div class="modal-overlay" id="lotModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="lots"></span>
+                Nouveau lot — Entrée de stock
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="lotForm" style="display: contents;">
+            <div class="modal-body">
+
+                <div class="info-banner">
+                    <span data-icon="info"></span>
+                    <div>
+                        <strong>Principe insert-only</strong> : un lot ne peut pas être modifié après création.
+                        Pour toute correction, enregistrez un <em>mouvement de stock</em> (ajustement).
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Médicament -->
+                    <div class="form-field full-width">
+                        <label for="medicamentId">Médicament <span class="required">*</span></label>
+                        <select id="medicamentId" name="medicament_id" required>
+                            <option value="">— Choisir un médicament —</option>
+                        </select>
+                        <span class="field-error" data-error-for="medicament_id"></span>
+                    </div>
+
+                    <!-- Fournisseur -->
+                    <div class="form-field full-width">
+                        <label for="fournisseurId">Fournisseur <span class="required">*</span></label>
+                        <select id="fournisseurId" name="fournisseur_id" required>
+                            <option value="">— Choisir un fournisseur —</option>
+                        </select>
+                        <span class="field-error" data-error-for="fournisseur_id"></span>
+                    </div>
+
+                    <!-- Numéro lot -->
+                    <div class="form-field">
+                        <label for="numeroLot">Numéro de lot <span class="required">*</span></label>
+                        <input type="text" id="numeroLot" name="numero_lot" required maxlength="100" placeholder="LOT-2026-001">
+                        <span class="field-error" data-error-for="numero_lot"></span>
+                    </div>
+
+                    <!-- Date fabrication -->
+                    <div class="form-field">
+                        <label for="dateFabrication">Date de fabrication</label>
+                        <input type="date" id="dateFabrication" name="date_fabrication">
+                        <span class="field-error" data-error-for="date_fabrication"></span>
+                    </div>
+
+                    <!-- Date péremption -->
+                    <div class="form-field">
+                        <label for="datePeremption">Date de péremption <span class="required">*</span></label>
+                        <input type="date" id="datePeremption" name="date_peremption" required>
+                        <span class="field-error" data-error-for="date_peremption"></span>
+                    </div>
+
+                    <!-- Prix achat -->
+                    <div class="form-field">
+                        <label for="prixAchat">Prix d'achat HT unitaire (BIF) <span class="required">*</span></label>
+                        <input type="number" id="prixAchat" name="prix_achat_ht_unitaire" required min="0" step="0.01">
+                        <span class="field-error" data-error-for="prix_achat_ht_unitaire"></span>
+                    </div>
+
+                    <!-- Quantité -->
+                    <div class="form-field full-width">
+                        <label for="quantiteInitiale">Quantité reçue <span class="required">*</span></label>
+                        <input type="number" id="quantiteInitiale" name="quantite_initiale" required min="1" step="1" placeholder="100">
+                        <span class="field-hint">La quantité restante sera égale à la quantité initiale à la création.</span>
+                        <span class="field-error" data-error-for="quantite_initiale"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Annuler</button>
+                <button type="submit" form="lotForm" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    Créer le lot
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Détail d'un lot
+     ============================================================ -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="lots"></span>
+                Détail du lot
+            </h3>
+            <button class="modal-close" id="detailCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body" id="detailBody">
+            <div class="spinner" style="margin: 20px auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="detailCloseBtn2">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/lots.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'lots',
+            title: 'Lots & Stock',
+            breadcrumb: 'Stock',
+        });
+    });
+</script>
+
+</body>
+</html>

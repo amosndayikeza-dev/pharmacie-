@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propriétaires — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/proprietaires.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Propriétaires</h1>
+                <p class="page-subtitle">Gérez les propriétaires d'animaux et payeurs</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouveau propriétaire
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, téléphone, email...">
+            </div>
+
+            <select id="filterType">
+                <option value="">Tous les types</option>
+                <option value="particulier">Particulier</option>
+                <option value="ferme">Ferme</option>
+                <option value="clinique">Clinique</option>
+                <option value="societe">Société</option>
+            </select>
+
+            <select id="filterVille">
+                <option value="">Toutes les villes</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="proprietairesTable">
+                    <thead>
+                        <tr>
+                            <th>Nom complet</th>
+                            <th>Type</th>
+                            <th>Contact</th>
+                            <th>Ville</th>
+                            <th>Animaux</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="proprietairesTbody">
+                        <tr>
+                            <td colspan="6" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier un propriétaire
+     ============================================================ -->
+<div class="modal-overlay" id="proprietaireModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="proprietaires"></span>
+                <span id="modalTitle">Nouveau propriétaire</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="proprietaireForm" style="display: contents;">
+            <div class="modal-body">
+                <input type="hidden" id="proprietaireId">
+
+                <div class="form-grid">
+                    <!-- Type -->
+                    <div class="form-field full-width">
+                        <label for="type">Type de propriétaire <span class="required">*</span></label>
+                        <select id="type" name="type" required>
+                            <option value="">— Choisir —</option>
+                            <option value="particulier">Particulier</option>
+                            <option value="ferme">Ferme / Élevage</option>
+                            <option value="clinique">Clinique vétérinaire</option>
+                            <option value="societe">Société</option>
+                        </select>
+                        <span class="field-error" data-error-for="type"></span>
+                    </div>
+
+                    <!-- Nom -->
+                    <div class="form-field">
+                        <label for="nom">Nom <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required maxlength="100">
+                        <span class="field-error" data-error-for="nom"></span>
+                    </div>
+
+                    <!-- Prénom (visible si particulier) -->
+                    <div class="form-field" id="prenomField">
+                        <label for="prenom">Prénom</label>
+                        <input type="text" id="prenom" name="prenom" maxlength="100">
+                        <span class="field-error" data-error-for="prenom"></span>
+                    </div>
+
+                    <!-- Raison sociale (visible si ferme/clinique/societe) -->
+                    <div class="form-field full-width" id="raisonSocialeField" style="display: none;">
+                        <label for="raisonSociale">Raison sociale</label>
+                        <input type="text" id="raisonSociale" name="raison_sociale" maxlength="200">
+                        <span class="field-error" data-error-for="raison_sociale"></span>
+                    </div>
+
+                    <!-- Date naissance (particulier) -->
+                    <div class="form-field" id="dateNaissanceField">
+                        <label for="dateNaissance">Date de naissance</label>
+                        <input type="date" id="dateNaissance" name="date_naissance">
+                        <span class="field-error" data-error-for="date_naissance"></span>
+                    </div>
+
+                    <!-- Sexe (particulier) -->
+                    <div class="form-field" id="sexeField">
+                        <label for="sexe">Sexe</label>
+                        <select id="sexe" name="sexe">
+                            <option value="">— Choisir —</option>
+                            <option value="M">Masculin</option>
+                            <option value="F">Féminin</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                        <span class="field-error" data-error-for="sexe"></span>
+                    </div>
+
+                    <!-- Téléphone -->
+                    <div class="form-field">
+                        <label for="telephone">Téléphone</label>
+                        <input type="text" id="telephone" name="telephone" maxlength="30" placeholder="+257 79 11 22 33">
+                        <span class="field-error" data-error-for="telephone"></span>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" maxlength="150">
+                        <span class="field-error" data-error-for="email"></span>
+                    </div>
+
+                    <!-- Adresse -->
+                    <div class="form-field full-width">
+                        <label for="adresse">Adresse</label>
+                        <textarea id="adresse" name="adresse" maxlength="500" rows="2" placeholder="Avenue de la Paix, N°5..."></textarea>
+                        <span class="field-error" data-error-for="adresse"></span>
+                    </div>
+
+                    <!-- Ville -->
+                    <div class="form-field">
+                        <label for="ville">Ville</label>
+                        <input type="text" id="ville" name="ville" maxlength="100" placeholder="Bujumbura">
+                        <span class="field-error" data-error-for="ville"></span>
+                    </div>
+
+                    <!-- Province -->
+                    <div class="form-field">
+                        <label for="province">Province</label>
+                        <input type="text" id="province" name="province" maxlength="100" placeholder="Bujumbura Rural">
+                        <span class="field-error" data-error-for="province"></span>
+                    </div>
+
+                    <!-- Pays -->
+                    <div class="form-field">
+                        <label for="pays">Pays</label>
+                        <input type="text" id="pays" name="pays" maxlength="100" value="Burundi">
+                        <span class="field-error" data-error-for="pays"></span>
+                    </div>
+
+                    <!-- Numéro pièce identité -->
+                    <div class="form-field">
+                        <label for="numeroPieceIdentite">N° pièce d'identité</label>
+                        <input type="text" id="numeroPieceIdentite" name="numero_piece_identite" maxlength="50" placeholder="CIN, passeport...">
+                        <span class="field-error" data-error-for="numero_piece_identite"></span>
+                    </div>
+
+                    <!-- Numéro contribuable -->
+                    <div class="form-field">
+                        <label for="numeroContribuable">N° contribuable</label>
+                        <input type="text" id="numeroContribuable" name="numero_contribuable" maxlength="50">
+                        <span class="field-error" data-error-for="numero_contribuable"></span>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="form-field full-width">
+                        <label for="notes">Notes internes</label>
+                        <textarea id="notes" name="notes" maxlength="2000" rows="2" placeholder="Informations complémentaires..."></textarea>
+                        <span class="field-error" data-error-for="notes"></span>
+                    </div>
+
+                    <!-- Consentement RGPD -->
+                    <div class="form-field full-width">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="consentementRgpd" name="consentement_rgpd">
+                            <span>Le propriétaire consent à la conservation de ses données (RGPD)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">
+                    Annuler
+                </button>
+                <button type="submit" form="proprietaireForm" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/proprietaires.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'proprietaires',
+            title: 'Propriétaires',
+            breadcrumb: 'Clients',
+        });
+    });
+</script>
+
+</body>
+</html>

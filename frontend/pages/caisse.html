@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caisse — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/caisse.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content caisse-main">
+
+        <div class="caisse-layout">
+
+            <!-- ══════════════════════════════════════════════════
+                 COLONNE GAUCHE — Recherche + Panier
+                 ══════════════════════════════════════════════════ -->
+            <section class="caisse-left">
+
+                <!-- Recherche médicament -->
+                <div class="caisse-search-box">
+                    <div class="caisse-search-input">
+                        <span class="search-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        </span>
+                        <input
+                            type="text"
+                            id="searchMedicament"
+                            placeholder="Rechercher un médicament (nom, code CIP, code-barre)..."
+                            autocomplete="off"
+                            autofocus>
+                        <span class="kbd-hint">Entrée pour ajouter</span>
+                    </div>
+
+                    <!-- Résultats de recherche -->
+                    <div id="searchResults" class="search-results" hidden></div>
+                </div>
+
+                <!-- Panier -->
+                <div class="caisse-panier">
+                    <div class="panier-header">
+                        <h3>
+                            <span data-icon="caisse"></span>
+                            Panier
+                            <span class="badge badge-neutral" id="nbArticles">0</span>
+                        </h3>
+                        <button class="btn btn-ghost" id="viderPanierBtn" title="Vider le panier">
+                            <span data-icon="trash"></span>
+                            Vider
+                        </button>
+                    </div>
+
+                    <div class="panier-body" id="panierBody">
+                        <div class="panier-empty">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="icon"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                            <p>Le panier est vide</p>
+                            <small>Recherchez un médicament pour commencer</small>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ══════════════════════════════════════════════════
+                 COLONNE DROITE — Client + Totaux + Paiement
+                 ══════════════════════════════════════════════════ -->
+            <aside class="caisse-right">
+
+                <!-- Client -->
+                <div class="caisse-section">
+                    <div class="section-title">
+                        <span data-icon="proprietaires"></span>
+                        Client
+                    </div>
+
+                    <div class="form-field">
+                        <select id="proprietaireId">
+                            <option value="">Client anonyme (OTC)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field" id="animalField" style="display: none;">
+                        <select id="animalId">
+                            <option value="">— Choisir un animal —</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-sm btn-secondary" id="nouveauClientBtn" style="width: 100%; margin-top: 8px;">
+                        <span data-icon="plus"></span>
+                        Nouveau client
+                    </button>
+                </div>
+
+                <!-- Totaux -->
+                <div class="caisse-section caisse-totaux">
+                    <div class="total-line">
+                        <span>Articles</span>
+                        <span id="totalArticles">0</span>
+                    </div>
+                    <div class="total-line">
+                        <span>Sous-total HT</span>
+                        <span id="totalHt">0 BIF</span>
+                    </div>
+                    <div class="total-line">
+                        <span>TVA</span>
+                        <span id="totalTva">0 BIF</span>
+                    </div>
+                    <div class="total-line total-main">
+                        <span>TOTAL TTC</span>
+                        <span id="totalTtc">0 BIF</span>
+                    </div>
+                </div>
+
+                <!-- Bouton valider -->
+                <button class="btn btn-primary caisse-btn-valider" id="validerVenteBtn" disabled>
+                    <span data-icon="check"></span>
+                    <span>Valider la vente</span>
+                    <span class="total-btn" id="btnTotal">0 BIF</span>
+                </button>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- ============================================================
+     MODAL : Paiement (multi-paiement)
+     ============================================================ -->
+<div class="modal-overlay" id="paiementModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="money"></span>
+                Encaissement
+            </h3>
+            <button class="modal-close" id="paiementCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="paiement-total">
+                <span>Total à payer</span>
+                <strong id="paiementTotal">0 BIF</strong>
+            </div>
+
+            <div class="paiement-lignes" id="paiementLignes">
+                <!-- Une ligne par mode de paiement -->
+            </div>
+
+            <div class="paiement-reste">
+                <span>Reste à payer :</span>
+                <strong id="paiementReste">0 BIF</strong>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="paiementCancelBtn">Annuler</button>
+            <button type="button" class="btn btn-primary" id="paiementValiderBtn" disabled>
+                <span data-icon="check"></span>
+                Encaisser
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation de vente
+     ============================================================ -->
+<div class="modal-overlay" id="succesModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="check"></span>
+                Vente enregistrée
+            </h3>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <div class="succes-icon">✅</div>
+            <p style="font-size: 1.05rem; margin: 16px 0;">
+                Ticket <strong id="succesNumero">—</strong>
+            </p>
+            <p style="color: var(--color-text-muted);">
+                Total : <strong id="succesTotal">—</strong>
+            </p>
+        </div>
+        <div class="modal-footer" style="justify-content: center; gap: 12px;">
+            <button type="button" class="btn btn-secondary" id="succesNouveauBtn">
+                <span data-icon="plus"></span>
+                Nouvelle vente
+            </button>
+            <button type="button" class="btn btn-primary" id="succesCloseBtn">
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/caisse.js"></script>
+
+<script>
+    Guard.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'caisse',
+            title: 'Caisse',
+            breadcrumb: 'Point de vente',
+        });
+    });
+</script>
+
+</body>
+</html>

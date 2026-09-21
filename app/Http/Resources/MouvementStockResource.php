@@ -13,29 +13,32 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class MouvementStockResource extends JsonResource
 {
     public function toArray(Request $request): array
-    {
-        return [
-            'id'             => $this->id,
-            'lot_id'         => $this->lot_id,
-            'date_heure'     => $this->date_heure?->toISOString(),
-            'quantite'       => $this->quantite,
-            'type'           => $this->type,
-            'reference_id'   => $this->reference_id,
-            'reference_type' => $this->reference_type,
-            'utilisateur_id' => $this->utilisateur_id,
-            'motif'          => $this->motif,
+{
+    return [
+        'id'             => $this->id,
+        'lot_id'         => $this->lot_id,
+        'date_heure'     => $this->date_heure?->toISOString(),
+        'quantite'       => (int) $this->quantite,
+        'type'           => $this->type,
 
-            // Champs calculés
-            'est_entree' => $this->estEntree(),
-            'est_sortie' => $this->estSortie(),
+        //  Nettoyer le type de référence
+        'reference_id'   => $this->reference_id,
+        'reference_type' => $this->reference_type
+            ? class_basename($this->reference_type)   // ← 'Vente' au lieu de 'App\Models\Vente'
+            : null,
 
-            // Relations (chargées à la demande)
-            'lot'         => $this->whenLoaded('lot'),
-            'utilisateur' => $this->whenLoaded('utilisateur'),
+        'utilisateur_id' => $this->utilisateur_id,
+        'motif'          => $this->motif,
 
-            // Timestamps
-            'created_at' => $this->created_at?->toISOString(),
-            'updated_at' => $this->updated_at?->toISOString(),
-        ];
-    }
+        // Relations
+        'lot'            => new LotResource($this->whenLoaded('lot')),
+        'utilisateur'    => $this->whenLoaded('utilisateur', fn () => [
+            'id'     => $this->utilisateur->id,
+            'nom'    => $this->utilisateur->nom,
+            'prenom' => $this->utilisateur->prenom,
+        ]),
+
+        'created_at'     => $this->created_at?->toISOString(),
+    ];
+}
 }

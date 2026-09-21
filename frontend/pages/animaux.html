@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animaux — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/animaux.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Animaux</h1>
+                <p class="page-subtitle">Patients de la pharmacie vétérinaire</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="addBtn">
+                    <span data-icon="plus"></span>
+                    Nouvel animal
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, identification...">
+            </div>
+
+            <select id="filterEspece">
+                <option value="">Toutes les espèces</option>
+            </select>
+
+            <select id="filterProprietaire">
+                <option value="">Tous les propriétaires</option>
+            </select>
+
+            <select id="filterVivant">
+                <option value="">Tous les statuts</option>
+                <option value="true">Vivants</option>
+                <option value="false">Décédés / Vendus</option>
+            </select>
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="animauxTable">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Espèce</th>
+                            <th>Propriétaire</th>
+                            <th>Sexe / Âge</th>
+                            <th>Poids</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="animauxTbody">
+                        <tr>
+                            <td colspan="7" class="empty">
+                                <div class="spinner" style="margin: 20px auto;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+
+</div>
+
+<!-- ============================================================
+     MODAL : Créer / Modifier un animal
+     ============================================================ -->
+<div class="modal-overlay" id="animalModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="animaux"></span>
+                <span id="modalTitle">Nouvel animal</span>
+            </h3>
+            <button class="modal-close" id="modalCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="animalForm" style="display: contents;">
+            <div class="modal-body">
+                <input type="hidden" id="animalId">
+
+                <div class="form-grid">
+                    <!-- Propriétaire -->
+                    <div class="form-field full-width">
+                        <label for="proprietaireId">Propriétaire <span class="required">*</span></label>
+                        <select id="proprietaireId" name="proprietaire_id" required>
+                            <option value="">— Choisir un propriétaire —</option>
+                        </select>
+                        <span class="field-error" data-error-for="proprietaire_id"></span>
+                    </div>
+
+                    <!-- Espèce -->
+                    <div class="form-field">
+                        <label for="especeId">Espèce <span class="required">*</span></label>
+                        <select id="especeId" name="espece_id" required>
+                            <option value="">— Choisir une espèce —</option>
+                        </select>
+                        <span class="field-error" data-error-for="espece_id"></span>
+                    </div>
+
+                    <!-- Nom -->
+                    <div class="form-field">
+                        <label for="nom">Nom</label>
+                        <input type="text" id="nom" name="nom" maxlength="100" placeholder="Rex, Bella...">
+                        <span class="field-error" data-error-for="nom"></span>
+                    </div>
+
+                    <!-- Identification -->
+                    <div class="form-field">
+                        <label for="numeroIdentification">N° d'identification</label>
+                        <input type="text" id="numeroIdentification" name="numero_identification" maxlength="100" placeholder="Boucle, puce, tatouage...">
+                        <span class="field-error" data-error-for="numero_identification"></span>
+                    </div>
+
+                    <!-- Sexe -->
+                    <div class="form-field">
+                        <label for="sexe">Sexe</label>
+                        <select id="sexe" name="sexe">
+                            <option value="Inconnu">— Choisir —</option>
+                            <option value="M">Mâle</option>
+                            <option value="F">Femelle</option>
+                        </select>
+                        <span class="field-error" data-error-for="sexe"></span>
+                    </div>
+
+                    <!-- Date naissance -->
+                    <div class="form-field">
+                        <label for="dateNaissance">Date de naissance</label>
+                        <input type="date" id="dateNaissance" name="date_naissance">
+                        <span class="field-error" data-error-for="date_naissance"></span>
+                    </div>
+
+                    <!-- Race -->
+                    <div class="form-field">
+                        <label for="race">Race</label>
+                        <input type="text" id="race" name="race" maxlength="100" placeholder="Berger allemand, Holstein...">
+                        <span class="field-error" data-error-for="race"></span>
+                    </div>
+
+                    <!-- Couleur -->
+                    <div class="form-field">
+                        <label for="couleur">Couleur</label>
+                        <input type="text" id="couleur" name="couleur" maxlength="100" placeholder="Noir, blanc...">
+                        <span class="field-error" data-error-for="couleur"></span>
+                    </div>
+
+                    <!-- Poids -->
+                    <div class="form-field">
+                        <label for="poidsKg">Poids (kg)</label>
+                        <input type="number" id="poidsKg" name="poids_kg" min="0" step="0.01" placeholder="12.5">
+                        <span class="field-error" data-error-for="poids_kg"></span>
+                    </div>
+
+                    <!-- Taille -->
+                    <div class="form-field">
+                        <label for="taille">Taille</label>
+                        <input type="text" id="taille" name="taille" maxlength="50" placeholder="Petit, moyen, grand...">
+                        <span class="field-error" data-error-for="taille"></span>
+                    </div>
+
+                    <!-- Allergies -->
+                    <div class="form-field full-width">
+                        <label for="allergies">Allergies</label>
+                        <textarea id="allergies" name="allergies" rows="2" placeholder="Antibiotiques, pollen..."></textarea>
+                        <span class="field-error" data-error-for="allergies"></span>
+                    </div>
+
+                    <!-- Antécédents -->
+                    <div class="form-field full-width">
+                        <label for="antecedents">Antécédents</label>
+                        <textarea id="antecedents" name="antecedents" rows="2" placeholder="Maladies passées, opérations..."></textarea>
+                        <span class="field-error" data-error-for="antecedents"></span>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="form-field full-width">
+                        <label for="notes">Notes internes</label>
+                        <textarea id="notes" name="notes" rows="2" placeholder="Informations complémentaires..."></textarea>
+                        <span class="field-error" data-error-for="notes"></span>
+                    </div>
+
+                    <!-- Statuts -->
+                    <div class="form-field full-width">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="sterilise" name="sterilise">
+                            <span>Stérilisé / Castré</span>
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="gestante" name="gestante">
+                            <span>Gestante</span>
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="allaitante" name="allaitante">
+                            <span>Allaitante</span>
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="vivant" name="vivant" checked>
+                            <span>Vivant (décocher si décédé ou vendu)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Annuler</button>
+                <button type="submit" form="animalForm" class="btn btn-primary" id="modalSubmitBtn">
+                    <span data-icon="check"></span>
+                    <span id="submitBtnText">Créer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL : Confirmation
+     ============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="alert"></span>
+                Confirmation
+            </h3>
+            <button class="modal-close" id="confirmCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancelBtn">Annuler</button>
+            <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/animaux.js"></script>
+
+<script>
+    Guard.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'animaux',
+            title: 'Animaux',
+            breadcrumb: 'Patients',
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,176 @@
+/* ============================================================
+   ACHATS CSS — Styles spécifiques
+   ============================================================ */
+
+.data-table td .btn-icon {
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    color: var(--color-text-muted);
+}
+
+.data-table td .btn-icon:hover {
+    color: var(--color-primary);
+    background: var(--color-primary-50);
+}
+
+.data-table td .btn-icon[data-action="delete"]:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+.data-table td code {
+    background: var(--color-bg-dark);
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.8rem;
+    color: var(--color-primary-dark);
+    font-weight: 600;
+}
+
+.info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #eff6ff;
+    color: #1e40af;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.info-banner svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Section lignes de commande */
+.lignes-section {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.lignes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.lignes-header h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.ligne-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.2fr auto;
+    gap: 12px;
+    align-items: end;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    margin-bottom: 8px;
+}
+
+.ligne-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.ligne-field label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+}
+
+.ligne-field input,
+.ligne-field select {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    outline: none;
+    background: #f8fafc;
+    font-family: inherit;
+    width: 100%;
+}
+
+.ligne-field input:focus,
+.ligne-field select:focus {
+    border-color: var(--color-primary);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.ligne-field-action {
+    justify-content: flex-end;
+}
+
+.ligne-field-action .btn-icon:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 24px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .toolbar-search,
+    .toolbar select {
+        width: 100%;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .ligne-row {
+        grid-template-columns: 1fr;
+    }
+}

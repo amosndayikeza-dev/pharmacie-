@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mouvements de stock — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/mouvements.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Mouvements de stock</h1>
+                <p class="page-subtitle">Journal d'audit — lecture seule</p>
+            </div>
+        </div>
+
+        <!-- Info banner -->
+        <div class="info-banner">
+            <span data-icon="info"></span>
+            <div>
+                <strong>Journal insert-only</strong> : chaque entrée/sortie de stock est enregistrée automatiquement.
+                Aucun mouvement ne peut être modifié ou supprimé.
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <section class="stats-grid">
+            <article class="stat-card stat-success">
+                <div class="stat-icon" data-icon="arrowDown"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Entrées</span>
+                    <span class="stat-value" id="statEntrees">—</span>
+                    <span class="stat-sub">Achats & ajustements</span>
+                </div>
+            </article>
+            <article class="stat-card stat-danger">
+                <div class="stat-icon" data-icon="arrowUp"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Sorties</span>
+                    <span class="stat-value" id="statSorties">—</span>
+                    <span class="stat-sub">Ventes & pertes</span>
+                </div>
+            </article>
+            <article class="stat-card stat-warning">
+                <div class="stat-icon" data-icon="alert"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Pertes</span>
+                    <span class="stat-value" id="statPertes">—</span>
+                    <span class="stat-sub">Périmés & casse</span>
+                </div>
+            </article>
+            <article class="stat-card stat-info">
+                <div class="stat-icon" data-icon="refresh"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Ajustements</span>
+                    <span class="stat-value" id="statAjustements">—</span>
+                    <span class="stat-sub">Corrections d'inventaire</span>
+                </div>
+            </article>
+        </section>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par motif, référence...">
+            </div>
+
+            <select id="filterType">
+                <option value="">Tous les types</option>
+                <option value="achat">Achat (entrée)</option>
+                <option value="vente">Vente (sortie)</option>
+                <option value="perte">Perte</option>
+                <option value="ajustement">Ajustement</option>
+            </select>
+
+            <input type="date" id="filterDateDebut" class="filter-date" title="Date de début">
+            <input type="date" id="filterDateFin" class="filter-date" title="Date de fin">
+
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <span data-icon="refresh"></span>
+                Réinitialiser
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="mouvementsTable">
+                    <thead>
+                        <tr>
+                            <th>Date / Heure</th>
+                            <th>Type</th>
+                            <th>Médicament / Lot</th>
+                            <th>Référence</th>
+                            <th class="text-right">Quantité</th>
+                            <th>Utilisateur</th>
+                            <th>Motif</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mouvementsTbody">
+                        <tr><td colspan="8" class="empty"><div class="spinner" style="margin: 20px auto;"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationContainer"></div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- ============================================================
+     MODAL : Détail d'un mouvement
+     ============================================================ -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="info"></span>
+                Détail du mouvement
+            </h3>
+            <button class="modal-close" id="detailCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+        <div class="modal-body" id="detailBody">
+            <div class="spinner" style="margin: 20px auto;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="detailCloseBtn2">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/mouvements.js"></script>
+
+<script>
+    Guard.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({
+            activePage: 'mouvements',
+            title: 'Mouvements de stock',
+            breadcrumb: 'Audit',
+        });
+    });
+</script>
+
+</body>
+</html>
