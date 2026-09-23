@@ -221,9 +221,10 @@
     margin-top: 2px;
 }
 
-/* Bloc utilisateur (à droite) */
 .header-user {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .user-trigger {

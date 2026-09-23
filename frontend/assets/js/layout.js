@@ -1,4 +1,78 @@
 /**
+ * Gestion du thème clair / sombre.
+ *
+ * - Persistance dans localStorage (clé : lgo_theme)
+ * - Respect de la préférence système au premier chargement
+ * - Application immédiate sur <html data-theme="...">
+ */
+const Theme = {
+    STORAGE_KEY: 'lgo_theme',
+
+    /**
+     * Initialise le thème au chargement de la page.
+     */
+    init() {
+        const saved = localStorage.getItem(this.STORAGE_KEY);
+
+        const theme = saved
+            ? saved
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+        this.apply(theme);
+    },
+
+    /**
+     * Applique un thème.
+     */
+    apply(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem(this.STORAGE_KEY, theme);
+        this.updateIcon(theme);
+    },
+
+    /**
+     * Bascule entre clair et sombre.
+     */
+    toggle() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        this.apply(next);
+    },
+
+    /**
+     * Met à jour l'icône du bouton.
+     */
+    updateIcon(theme) {
+        const btn = document.getElementById('themeToggle');
+        if (!btn) return;
+
+        // Icône
+        const iconName = theme === 'dark' ? 'sun' : 'moon';
+        const iconEl = btn.querySelector('[data-icon]');
+        if (iconEl && typeof Icons !== 'undefined' && Icons[iconName]) {
+            iconEl.innerHTML = Icons[iconName];
+        }
+
+        // Texte
+        const labelEl = btn.querySelector('.theme-label');
+        if (labelEl) {
+            labelEl.textContent = theme === 'dark' ? 'Thème clair' : 'Thème sombre';
+        }
+    },
+
+    /**
+     * Retourne le thème courant.
+     */
+    current() {
+        return document.documentElement.getAttribute('data-theme') || 'light';
+    },
+};
+
+// ⚠️ Application IMMÉDIATE (avant le DOMContentLoaded) pour éviter le flash
+Theme.init();
+
+
+/**
  * Layout — Monte les composants (sidebar, header, footer)
  * puis initialise les comportements (toggle, dropdown, etc.).
  */
@@ -13,10 +87,9 @@ const Layout = {
      * @param {string} options.title         Titre du header
      * @param {string} options.breadcrumb    Sous-titre du header
      */
-    mount(options = {}) {
+        mount(options = {}) {
         const { activePage = '', title = '', breadcrumb = '' } = options;
 
-        // Remplir les placeholders
         const sidebarEl = document.getElementById('appSidebar');
         const headerEl  = document.getElementById('appHeader');
         const footerEl  = document.getElementById('appFooter');
@@ -25,7 +98,7 @@ const Layout = {
         if (headerEl)  headerEl.innerHTML  = Components.header({ title, breadcrumb });
         if (footerEl)  footerEl.innerHTML  = Components.footer();
 
-        // Injecter les icônes dans les composants
+        // Injecter les icônes
         document.querySelectorAll('[data-icon]').forEach(el => {
             const name = el.getAttribute('data-icon');
             if (typeof Icons !== 'undefined' && Icons[name]) {
@@ -33,9 +106,9 @@ const Layout = {
             }
         });
 
-        // Initialiser les comportements
         this.setupSidebar();
         this.setupUserMenu();
+        this.setupTheme();
         this.renderUser();
     },
 
@@ -105,6 +178,27 @@ const Layout = {
                 }
             });
         }
+    },
+
+
+        /**
+     * Branche le bouton de bascule de thème.
+     */
+        setupTheme() {
+        const btn = document.getElementById('themeToggle');
+        if (!btn) return;
+
+        // Éviter les doubles listeners
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // ⚠️ Empêche la fermeture du dropdown
+            Theme.toggle();
+        });
+
+        // Mettre à jour l'apparence du bouton
+        Theme.updateIcon(Theme.current());
     },
 
     /**

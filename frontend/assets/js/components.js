@@ -101,7 +101,7 @@ const Components = {
      * @param {string} options.breadcrumb  Sous-titre
      * @returns {string} HTML
      */
-    header(options = {}) {
+        header(options = {}) {
         const { title = 'Page', breadcrumb = '' } = options;
 
         return `
@@ -133,6 +133,13 @@ const Components = {
                         <span data-icon="settings"></span>
                         Paramètres
                     </a>
+
+                    <!-- ⚠️ Toggle de thème DANS le menu -->
+                    <button class="dropdown-item" id="themeToggle" type="button">
+                        <span data-icon="moon"></span>
+                        <span class="theme-label">Thème sombre</span>
+                    </button>
+
                     <div class="dropdown-divider"></div>
                     <button class="dropdown-item danger" id="logoutBtn">
                         <span data-icon="logout"></span>
@@ -142,7 +149,6 @@ const Components = {
             </div>
         `;
     },
-
     // ============================================================
     // FOOTER
     // ============================================================
