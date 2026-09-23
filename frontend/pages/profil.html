@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon profil — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/profil.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Mon profil</h1>
+                <p class="page-subtitle">Gérez vos informations et votre mot de passe</p>
+            </div>
+        </div>
+
+        <!-- Carte identité -->
+        <article class="card profil-identite" style="margin-bottom: 24px;">
+            <div class="card-body">
+                <div class="profil-header">
+                    <div class="profil-avatar" id="profilAvatar">—</div>
+                    <div>
+                        <h2 id="profilNom">—</h2>
+                        <p class="text-muted" id="profilEmail">—</p>
+                        <span class="badge badge-primary" id="profilRole">—</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <div class="grid-2">
+
+            <!-- Informations personnelles -->
+            <article class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <span data-icon="user"></span>
+                        Informations personnelles
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="infoForm">
+                        <div class="form-field">
+                            <label for="nom">Nom</label>
+                            <input type="text" id="nom" required maxlength="100">
+                            <span class="field-error" data-error-for="nom"></span>
+                        </div>
+
+                        <div class="form-field" style="margin-top: 12px;">
+                            <label for="prenom">Prénom</label>
+                            <input type="text" id="prenom" required maxlength="100">
+                            <span class="field-error" data-error-for="prenom"></span>
+                        </div>
+
+                        <div class="form-field" style="margin-top: 12px;">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" required maxlength="150">
+                            <span class="field-error" data-error-for="email"></span>
+                        </div>
+
+                        <div class="form-field" style="margin-top: 12px;">
+                            <label>Rôle</label>
+                            <input type="text" id="role" disabled>
+                            <span class="field-hint">Le rôle est défini par l'administrateur.</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="saveInfoBtn" style="margin-top: 20px; width: 100%;">
+                            <span data-icon="check"></span>
+                            Enregistrer
+                        </button>
+                    </form>
+                </div>
+            </article>
+
+            <!-- Changer mot de passe -->
+            <article class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <span data-icon="key"></span>
+                        Changer le mot de passe
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="passwordForm">
+                        <div class="form-field">
+                            <label for="currentPassword">Mot de passe actuel</label>
+                            <input type="password" id="currentPassword" required>
+                            <span class="field-error" data-error-for="current_password"></span>
+                        </div>
+
+                        <div class="form-field" style="margin-top: 12px;">
+                            <label for="newPassword">Nouveau mot de passe</label>
+                            <input type="password" id="newPassword" required minlength="8">
+                            <span class="field-hint">Min. 8 caractères.</span>
+                            <span class="field-error" data-error-for="password"></span>
+                        </div>
+
+                        <div class="form-field" style="margin-top: 12px;">
+                            <label for="newPasswordConfirm">Confirmer</label>
+                            <input type="password" id="newPasswordConfirm" required minlength="8">
+                            <span class="field-error" data-error-for="password_confirmation"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="savePwdBtn" style="margin-top: 20px; width: 100%;">
+                            <span data-icon="key"></span>
+                            Modifier le mot de passe
+                        </button>
+                    </form>
+                </div>
+            </article>
+
+        </div>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/profil.js"></script>
+
+<script>
+    Guard.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({ activePage: 'profil', title: 'Mon profil', breadcrumb: '' });
+    });
+</script>
+
+</body>
+</html>

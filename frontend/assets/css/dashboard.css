@@ -25,3 +25,21 @@
     font-size: 0.75rem;
     color: var(--color-text-soft);
 }
+
+/* ============================================================
+   GRAPHIQUES (Chart.js)
+   ============================================================ */
+
+.chart-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+
+.chart-container-pie {
+    height: 300px;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+}

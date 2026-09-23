@@ -1,0 +1,49 @@
+/* ============================================================
+   PROFIL CSS
+   ============================================================ */
+
+.profil-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.profil-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.profil-header h2 {
+    font-size: 1.35rem;
+    margin-bottom: 4px;
+}
+
+.profil-header p {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+/* Inputs désactivés */
+.form-field input:disabled {
+    background: var(--slate-100);
+    cursor: not-allowed;
+    color: var(--slate-500);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .profil-header {
+        flex-direction: column;
+        text-align: center;
+    }
+}

@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\MouvementStockController;
 use App\Http\Controllers\Api\V1\RapportJournalierController;
 use App\Http\Controllers\Api\V1\LogController;
 use App\Http\Controllers\Api\V1\ExportController;
+use App\Http\Controllers\Api\V1\ParametreController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -448,6 +449,18 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/stock',        [ExportController::class, 'stock'])->name('stock');
         Route::get('/lots-perimes', [ExportController::class, 'lotsPerimes'])->name('lots.perimes');
         Route::get('/rapport-pdf',  [ExportController::class, 'rapportPdf'])->name('rapport.pdf');
+    });
+
+        // ============================================================
+    // PARAMÈTRES
+    // ============================================================
+
+    Route::prefix('parametres')->name('parametres.')->group(function () {
+        Route::get('/',                [ParametreController::class, 'index'])->name('index');
+        Route::get('/groupe/{groupe}', [ParametreController::class, 'parGroupe'])->name('par.groupe');
+        Route::put('/',                [ParametreController::class, 'update'])
+            ->middleware('role.api:Administrateur')
+            ->name('update');
     });
 
     });
