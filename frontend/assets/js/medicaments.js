@@ -100,6 +100,8 @@ async function loadCategories() {
 
 function renderTable() {
     const tbody = document.getElementById('medicamentsTbody');
+    const user = Storage.getUser();
+    const canWrite = ['Administrateur', 'Pharmacien'].includes(user?.role);
 
     if (!State.medicaments.length) {
         tbody.innerHTML = `
@@ -152,12 +154,11 @@ function renderTable() {
                     <button class="btn btn-ghost btn-icon" onclick="toggleActif(${m.id})" title="${m.actif ? 'Désactiver' : 'Activer'}">
                         <span data-icon="power"></span>
                     </button>
-                    <button class="btn btn-ghost btn-icon" onclick="editMedicament(${m.id})" title="Modifier">
-                        <span data-icon="edit"></span>
-                    </button>
-                    <button class="btn btn-ghost btn-icon" onclick="deleteMedicament(${m.id}, '${escapeHtml(m.nom).replace(/'/g, "\\'")}')" title="Supprimer">
-                        <span data-icon="trash"></span>
-                    </button>
+                    ${canWrite ? `
+                        <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${m.id}" title="Modifier">...</button>
+                        <button class="btn btn-ghost btn-icon" data-action="delete" data-id="${m.id}" title="Supprimer">...</button>
+                    ` : ''
+                    }
                 </td>
             </tr>
         `;
@@ -461,3 +462,10 @@ function escapeHtml(text) {
 }
 
 
+// Masquer les boutons d'écriture pour les Vendeurs
+const user = Storage.getUser();
+const isVendeur = user?.role === 'Vendeur';
+
+if (isVendeur) {
+    document.getElementById('addBtn')?.style.setProperty('display', 'none');
+}

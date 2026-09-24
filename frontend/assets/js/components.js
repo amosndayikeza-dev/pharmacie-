@@ -18,45 +18,195 @@ const Components = {
      * @param {string} activePage  Page active (nom du fichier sans .html)
      * @returns {string} HTML
      */
+        /**
+     * Génère la sidebar en filtrant les liens selon le rôle.
+     *
+     * @param {string} activePage  Nom de la page active (sans .html)
+     * @returns {string} HTML
+     */
     sidebar(activePage = '') {
+        // ⚠️ Récupérer le rôle de l'utilisateur connecté
+        const user = typeof Storage !== 'undefined' ? Storage.getUser() : null;
+        const userRole = user?.role || null;
+
+        // ═══════════════════════════════════════════════════════════
+        // DÉFINITION DES LIENS avec 'roles' = qui peut les voir
+        // ═══════════════════════════════════════════════════════════
         const links = [
             {
                 section: 'Principal',
                 items: [
-                    { href: 'dashboard.html',    icon: 'dashboard',    label: 'Tableau de bord' },
-                    { href: 'caisse.html',       icon: 'caisse',       label: 'Caisse' },
-                    { href: 'ventes.html',       icon: 'ventes',       label: 'Ventes' },
+                    {
+                        href: 'dashboard.html',
+                        icon: 'dashboard',
+                        label: 'Tableau de bord',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                    {
+                        href: 'caisse.html',
+                        icon: 'caisse',
+                        label: 'Caisse',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                    {
+                        href: 'ventes.html',
+                        icon: 'ventes',
+                        label: 'Ventes',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
                 ],
             },
             {
                 section: 'Gestion',
                 items: [
-                    { href: 'medicaments.html',  icon: 'medicaments',  label: 'Médicaments' },
-                    { href: 'lots.html',         icon: 'lots',         label: 'Lots & Stock', badgeId: 'badgeAlertes' },
-                    { href: 'animaux.html',      icon: 'animaux',      label: 'Animaux' },
-                    { href: 'proprietaires.html', icon: 'proprietaires', label: 'Propriétaires' },
-                    { href: 'especes.html', icon: 'especes', label: 'Espèces' },
-                    { href: 'ordonnances.html', icon: 'fileText', label: 'Ordonnances' },
-                    { href: 'vaccinations.html', icon: 'syringe', label: 'Vaccinations' },
-                    { href: 'mouvements.html', icon: 'refresh', label: 'Mouvements stock' },
+                    {
+                        href: 'medicaments.html',
+                        icon: 'medicaments',
+                        label: 'Médicaments',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                    {
+                        href: 'lots.html',
+                        icon: 'lots',
+                        label: 'Lots & Stock',
+                        badgeId: 'badgeAlertes',
+                        roles: ['Administrateur', 'Pharmacien'],
+                    },
+                    {
+                        href: 'especes.html',
+                        icon: 'especes',
+                        label: 'Espèces',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                    {
+                        href: 'animaux.html',
+                        icon: 'animaux',
+                        label: 'Animaux',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                    {
+                        href: 'proprietaires.html',
+                        icon: 'proprietaires',
+                        label: 'Propriétaires',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                    {
+                        href: 'ordonnances.html',
+                        icon: 'fileText',
+                        label: 'Ordonnances',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                    {
+                        href: 'vaccinations.html',
+                        icon: 'syringe',
+                        label: 'Vaccinations',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                ],
+            },
+            {
+                section: 'Approvisionnement',
+                items: [
+                    {
+                        href: 'fournisseurs.html',
+                        icon: 'fournisseurs',
+                        label: 'Fournisseurs',
+                        roles: ['Administrateur', 'Pharmacien'],
+                    },
+                    {
+                        href: 'achats.html',
+                        icon: 'achats',
+                        label: 'Achats',
+                        roles: ['Administrateur', 'Pharmacien'],
+                    },
+                    {
+                        href: 'receptions.html',
+                        icon: 'truck',
+                        label: 'Réceptions',
+                        roles: ['Administrateur', 'Pharmacien'],
+                    },
+                ],
+            },
+            {
+                section: 'Partenaires',
+                items: [
+                    {
+                        href: 'veterinaires.html',
+                        icon: 'stethoscope',
+                        label: 'Vétérinaires',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
+                ],
+            },
+            {
+                section: 'Analyse',
+                items: [
+                    {
+                        href: 'rapports.html',
+                        icon: 'rapports',
+                        label: 'Rapports',
+                        roles: ['Administrateur', 'Pharmacien'],
+                    },
+                    {
+                        href: 'mouvements.html',
+                        icon: 'refresh',
+                        label: 'Mouvements stock',
+                        roles: ['Administrateur', 'Pharmacien'],
+                    },
+                    {
+                        href: 'exports.html',
+                        icon: 'download',
+                        label: 'Exports',
+                        roles: ['Administrateur', 'Pharmacien'],
+                    },
                 ],
             },
             {
                 section: 'Administration',
                 items: [
-                    { href: 'achats.html',       icon: 'achats',       label: 'Achats' },
-                    { href: 'rapports.html',     icon: 'rapports',     label: 'Rapports' },
-                    { href: 'utilisateurs.html', icon: 'utilisateurs', label: 'Utilisateurs' },
-                    { href: 'parametres.html',   icon: 'parametres',   label: 'Paramètres' },
-                    { href: 'veterinaires.html', icon: 'stethoscope', label: 'Vétérinaires' },
-                    { href: 'fournisseurs.html', icon: 'fournisseurs', label: 'Fournisseurs' },
-                    { href: 'receptions.html', icon: 'truck', label: 'Réceptions' },
-                    { href: 'logs.html', icon: 'list', label: 'Logs (Audit)' },
-                    { href: 'exports.html', icon: 'download', label: 'Exports' },
+                    {
+                        href: 'utilisateurs.html',
+                        icon: 'utilisateurs',
+                        label: 'Utilisateurs',
+                        roles: ['Administrateur'],
+                    },
+                    {
+                        href: 'logs.html',
+                        icon: 'list',
+                        label: 'Logs (Audit)',
+                        roles: ['Administrateur'],
+                    },
+                    {
+                        href: 'parametres.html',
+                        icon: 'parametres',
+                        label: 'Paramètres',
+                        roles: ['Administrateur', 'Pharmacien'],   // lecture seule pour pharmacien
+                    },
                 ],
             },
         ];
 
+        // ═══════════════════════════════════════════════════════════
+        // FILTRAGE selon le rôle
+        // ═══════════════════════════════════════════════════════════
+        const filteredLinks = links
+            .map(group => ({
+                ...group,
+                items: group.items.filter(item => {
+                    // Si pas de rôle défini → accessible à tous
+                    if (!item.roles) return true;
+                    // Si aucun utilisateur → masquer (sécurité)
+                    if (!userRole) return false;
+                    // Sinon vérifier si le rôle est dans la liste
+                    return item.roles.includes(userRole);
+                }),
+            }))
+            // Supprimer les groupes qui n'ont plus d'items
+            .filter(group => group.items.length > 0);
+
+        // ═══════════════════════════════════════════════════════════
+        // RENDU
+        // ═══════════════════════════════════════════════════════════
         const renderLink = (item) => {
             const isActive = item.href.replace('.html', '') === activePage;
             const badge = item.badgeId
@@ -84,7 +234,7 @@ const Components = {
             </div>
 
             <nav class="sidebar-nav">
-                ${links.map(renderSection).join('')}
+                ${filteredLinks.map(renderSection).join('')}
             </nav>
 
             <div class="sidebar-footer">© 2026 LGO Pharmacie</div>

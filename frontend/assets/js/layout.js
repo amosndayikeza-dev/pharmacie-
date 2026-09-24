@@ -216,3 +216,37 @@ const Layout = {
         document.querySelectorAll('.user-avatar').forEach(el => el.textContent = initiales);
     },
 };
+
+
+/**
+ * Vérifie que l'utilisateur a le droit d'accéder à cette page.
+ * Redirige vers le dashboard si non autorisé.
+ */
+function checkPageAccess() {
+    const user = Storage.getUser();
+    if (!user) return; // Guard.requireAuth() gère déjà ça
+
+    // Pages réservées à l'Admin
+    const adminPages = ['utilisateurs.html', 'logs.html'];
+    // Pages Admin + Pharmacien
+    const staffPages = ['rapports.html', 'mouvements.html', 'exports.html',
+                        'fournisseurs.html', 'achats.html', 'receptions.html',
+                        'lots.html', 'parametres.html'];
+
+    const currentPage = window.location.pathname.split('/').pop();
+
+    if (adminPages.includes(currentPage) && user.role !== 'Administrateur') {
+        Toast.error('Accès refusé.');
+        setTimeout(() => window.location.href = 'dashboard.html', 1000);
+        return false;
+    }
+
+    if (staffPages.includes(currentPage)
+        && !['Administrateur', 'Pharmacien'].includes(user.role)) {
+        Toast.error('Accès refusé.');
+        setTimeout(() => window.location.href = 'dashboard.html', 1000);
+        return false;
+    }
+
+    return true;
+}
