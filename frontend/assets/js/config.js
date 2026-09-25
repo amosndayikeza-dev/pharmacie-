@@ -1,7 +1,7 @@
 /**
  * Configuration globale du frontend.
  *
- * ⚠️ IMPORTANT : les ROUTES utilisent des CHEMINS ABSOLUS.
+ *  IMPORTANT : les ROUTES utilisent des CHEMINS ABSOLUS.
  * Préfixe /frontend/ car Live Server sert depuis la racine pharmacie/.
  *
  * Ainsi, les redirections fonctionnent depuis N'IMPORTE QUELLE page :
@@ -20,7 +20,7 @@ const CONFIG = {
         USER:  'lgo_auth_user',
     },
 
-    // ⚠️ CHEMINS ABSOLUS (commencent par /) — ne jamais utiliser de chemins relatifs
+    //  CHEMINS ABSOLUS (commencent par /) — ne jamais utiliser de chemins relatifs
     ROUTES: {
         LOGIN:      '/frontend/index.html',
         DASHBOARD:  '/frontend/pages/dashboard.html',

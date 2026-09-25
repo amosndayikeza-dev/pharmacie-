@@ -181,9 +181,13 @@
                     </div>
 
                     <!-- Catégorie -->
+                    <!-- Catégorie (liste déroulante) -->
                     <div class="form-field">
                         <label for="categorie">Catégorie</label>
-                        <input type="text" id="categorie" name="categorie" maxlength="100" placeholder="Antibiotique, Vaccin...">
+                        <select id="categorie" name="categorie">
+                            <option value="">— Choisir une catégorie —</option>
+                        </select>
+                        <span class="field-hint">La catégorie provient du catalogue existant.</span>
                     </div>
 
                     <!-- Voie d'administration -->

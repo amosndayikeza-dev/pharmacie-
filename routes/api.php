@@ -51,22 +51,34 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
 
 
-        // --- Lecture (tous les rôles connectés) ---
-        Route::prefix('medicaments')->name('medicaments.')->group(function () {
-            Route::get('/',              [MedicamentController::class, 'index'])->name('index');
-            Route::get('/categories',    [MedicamentController::class, 'categories'])->name('categories');
-            Route::get('/alertes-stock', [MedicamentController::class, 'alertesStock'])->name('alertes.stock');
-            Route::get('/{id}',          [MedicamentController::class, 'show'])->whereNumber('id')->name('show');
-        });
+    // ============================================================
+    // MÉDICAMENTS
+    // ============================================================
 
-        // --- Écriture (Administrateur uniquement) ---
-        Route::middleware('role.api:Administrateur')->prefix('medicaments')->name('medicaments.')->group(function () {
+    // --- Lecture (tous les rôles connectés) ---
+    Route::prefix('medicaments')->name('medicaments.')->group(function () {
+        Route::get('/',              [MedicamentController::class, 'index'])->name('index');
+        Route::get('/categories',    [MedicamentController::class, 'categories'])->name('categories');
+        Route::get('/alertes-stock', [MedicamentController::class, 'alertesStock'])->name('alertes.stock');
+        Route::get('/{id}',          [MedicamentController::class, 'show'])->whereNumber('id')->name('show');
+    });
+
+    // --- Création + Modification (Admin + Pharmacien) ---
+    Route::middleware('role.api:Administrateur,Pharmacien')
+        ->prefix('medicaments')->name('medicaments.')
+        ->group(function () {
             Route::post('/',                  [MedicamentController::class, 'store'])->name('store');
             Route::put('/{id}',               [MedicamentController::class, 'update'])->whereNumber('id')->name('update');
             Route::patch('/{id}',             [MedicamentController::class, 'update'])->whereNumber('id');
-            Route::delete('/{id}',            [MedicamentController::class, 'destroy'])->whereNumber('id')->name('destroy');
             Route::post('/{id}/toggle-actif', [MedicamentController::class, 'toggleActif'])->whereNumber('id')->name('toggle.actif');
-            Route::post('/{id}/restore',      [MedicamentController::class, 'restore'])->whereNumber('id')->name('restore');
+        });
+
+    // --- Suppression + Restauration (Administrateur UNIQUEMENT) ---
+    Route::middleware('role.api:Administrateur')
+        ->prefix('medicaments')->name('medicaments.')
+        ->group(function () {
+            Route::delete('/{id}',       [MedicamentController::class, 'destroy'])->whereNumber('id')->name('destroy');
+            Route::post('/{id}/restore', [MedicamentController::class, 'restore'])->whereNumber('id')->name('restore');
         });
 
         

@@ -1,14 +1,32 @@
 /**
- * Logique de la page Médicaments (CRUD complet).
+ * ============================================================
+ * LOGIQUE DE LA PAGE MÉDICAMENTS (CRUD COMPLET)
+ * ============================================================
  *
- * ⚠️ Le layout (sidebar, header, footer) est géré par components.js + layout.js
- * Ce fichier ne contient QUE la logique du contenu (tableau, modals, filtres).
+ * Cette page gère :
+ *   - La liste paginée des médicaments avec filtres (recherche, catégorie, ordonnance, statut)
+ *   - La création / modification / suppression (selon le rôle)
+ *   - L'activation / désactivation d'un médicament
+ *   - Les catégories (liste déroulante alimentée par la base + suggestions)
+ *
+ * RBAC (Role-Based Access Control) :
+ *   - Administrateur : peut créer, modifier, activer/désactiver, supprimer
+ *   - Pharmacien     : peut créer, modifier, activer/désactiver (PAS supprimer)
+ *   - Vendeur        : lecture seule (le bouton "+ Nouveau" est masqué)
+ *
+ * ⚠️ Le layout (sidebar, header, footer) est géré par components.js + layout.js.
+ *    Ce fichier ne contient QUE la logique du contenu.
  */
 
-// === 1. Protéger la page ===
+// ============================================================
+// PROTECTION DE LA PAGE
+// ============================================================
 Guard.requireAuth();
 
-// === 2. État de la page ===
+// ============================================================
+// ÉTAT DE LA PAGE
+// ============================================================
+
 const State = {
     medicaments: [],
     pagination:  { current_page: 1, last_page: 1, per_page: 20, total: 0 },
@@ -21,15 +39,43 @@ const State = {
     editingId: null,
 };
 
+// ============================================================
+// PERMISSIONS (calculées une seule fois au chargement)
+// ============================================================
+
+/**
+ * Récupère le rôle de l'utilisateur connecté et calcule les permissions.
+ * Utilisé dans le rendu du tableau et du bouton "+ Nouveau".
+ */
+const Permissions = (() => {
+    const user = Storage.getUser();
+    const role = user?.role || 'Vendeur';
+
+    return {
+        role,
+        peutCreer:     ['Administrateur', 'Pharmacien'].includes(role),
+        peutModifier:  ['Administrateur', 'Pharmacien'].includes(role),
+        peutSupprimer: role === 'Administrateur',
+        peutVoir:      ['Administrateur', 'Pharmacien', 'Vendeur'].includes(role),
+    };
+})();
+
+// ============================================================
+// INITIALISATION
+// ============================================================
+
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await loadCategories();
-        await loadMedicaments();
-    } catch (error) {
-        // Log pour débogage, mais ne pas arrêter l'initialisation
-        console.error('Erreur lors du chargement des données:', error);
+    // 1. Masquer le bouton "+ Nouveau" si l'utilisateur ne peut pas créer
+    if (!Permissions.peutCreer) {
+        document.getElementById('addBtn')?.style.setProperty('display', 'none');
     }
-    // Toujours initialiser les écouteurs même si le chargement a échoué
+
+    // 2. Charger les données
+    await loadCategories();
+    await loadMedicaments();
+    await loadCategoriesForForm();
+
+    // 3. Brancher les événements
     setupEventListeners();
 });
 
@@ -37,9 +83,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 // CHARGEMENT DES DONNÉES
 // ============================================================
 
+/**
+ * Charge la liste paginée des médicaments avec filtres.
+ *
+ * @param {number} page  Numéro de page (défaut : 1)
+ */
 async function loadMedicaments(page = 1) {
     const tbody = document.getElementById('medicamentsTbody');
-    tbody.innerHTML = `<tr><td colspan="8" class="empty"><div class="spinner" style="margin:20px auto;"></div></td></tr>`;
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8" class="empty">
+                <div class="spinner" style="margin: 20px auto;"></div>
+            </td>
+        </tr>
+    `;
 
     try {
         const params = new URLSearchParams({
@@ -48,6 +105,7 @@ async function loadMedicaments(page = 1) {
             with_stock: true,
         });
 
+        // Filtres optionnels
         if (State.filters.search)         params.append('search', State.filters.search);
         if (State.filters.categorie)      params.append('categorie', State.filters.categorie);
         if (State.filters.sur_ordonnance) params.append('sur_ordonnance', State.filters.sur_ordonnance);
@@ -56,33 +114,37 @@ async function loadMedicaments(page = 1) {
         const response = await Api.get(`/medicaments?${params}`);
 
         State.medicaments = response.data || [];
-        State.pagination = response.meta || {};
+        State.pagination  = response.meta || {};
 
         renderTable();
         renderPagination();
     } catch (error) {
-    console.error('[loadMedicaments]', error);
+        console.error('[loadMedicaments]', error);
 
-    const msg = error.status
-        ? `[${error.status}] ${error.message}`
-        : error.message || 'Erreur inconnue';
+        const msg = error.status
+            ? `[${error.status}] ${error.message}`
+            : error.message || 'Erreur inconnue';
 
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="8" class="empty" style="color: var(--color-danger); padding: 20px; text-align: center;">
-                ⚠️ ${escapeHtml(msg)}
-            </td>
-        </tr>
-    `;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty" style="color: var(--color-danger); padding: 20px; text-align: center;">
+                    ⚠️ ${escapeHtml(msg)}
+                </td>
+            </tr>
+        `;
 
-    try { Toast.error(msg); } catch (e) {}
+        try { Toast.error(msg); } catch (e) {}
+    }
 }
-}
 
+/**
+ * Charge les catégories dans le <select> du filtre (toolbar).
+ */
 async function loadCategories() {
     try {
         const response = await Api.get('/medicaments/categories');
         const select = document.getElementById('filterCategorie');
+
         (response.data || []).forEach(cat => {
             const option = document.createElement('option');
             option.value = cat;
@@ -90,25 +152,84 @@ async function loadCategories() {
             select.appendChild(option);
         });
     } catch (e) {
-        // Silencieux
+        // Silencieux : pas critique si les catégories ne se chargent pas
     }
 }
 
+/**
+ * Charge les catégories dans le <select> du modal (création/modification).
+ *
+ * Combine :
+ *   1. Les catégories existantes en base (via API)
+ *   2. Une liste de catégories suggérées (au cas où la base serait vide)
+ */
+async function loadCategoriesForForm() {
+    const select = document.getElementById('categorie');
+    if (!select) return;
+
+    // Liste fixe de catégories suggérées
+    const categoriesSuggerees = [
+        'Antibiotique',
+        'Antiparasitaire',
+        'Anti-inflammatoire',
+        'Antalgique',
+        'Vaccin',
+        'Vitamine',
+        'Antiulcéreux',
+        'Antiseptique',
+        'Corticoïde',
+        'Ophtalmologie',
+        'Dermatologie',
+        'Réhydratation',
+        'Matériel',
+        'Autre',
+    ];
+
+    // Catégories existantes en base
+    let categoriesBdd = [];
+    try {
+        const response = await Api.get('/medicaments/categories');
+        categoriesBdd = response.data || [];
+    } catch (e) {
+        console.warn('[Medicaments] Impossible de charger les catégories BDD');
+    }
+
+    // Fusionner + dédupliquer + trier
+    const toutes = [...new Set([...categoriesBdd, ...categoriesSuggerees])].sort();
+
+    // Vider sauf la première option
+    while (select.options.length > 1) select.remove(1);
+
+    // Ajouter les options
+    toutes.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+    });
+}
+
 // ============================================================
-// RENDU
+// RENDU DU TABLEAU
 // ============================================================
 
+/**
+ * Affiche le tableau des médicaments.
+ * Les boutons d'action sont filtrés selon le rôle de l'utilisateur.
+ */
 function renderTable() {
     const tbody = document.getElementById('medicamentsTbody');
-    const user = Storage.getUser();
-    const canWrite = ['Administrateur', 'Pharmacien'].includes(user?.role);
 
+    // Cas : aucun médicament
     if (!State.medicaments.length) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" class="empty">
                     <div class="empty-state">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon">
+                            <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+                            <path d="m8.5 8.5 7 7"/>
+                        </svg>
                         <p>Aucun médicament trouvé</p>
                     </div>
                 </td>
@@ -117,14 +238,49 @@ function renderTable() {
         return;
     }
 
+    // Rendu des lignes
     tbody.innerHTML = State.medicaments.map(m => {
+        // === Calcul du badge de stock ===
         const stock = m.stock_disponible ?? 0;
         const seuil = m.seuil_alerte ?? 0;
         let stockClass = 'badge-success';
         let stockLabel = stock;
-        if (stock === 0) { stockClass = 'badge-danger'; stockLabel = 'Rupture'; }
-        else if (stock <= seuil) { stockClass = 'badge-warning'; }
 
+        if (stock === 0) {
+            stockClass = 'badge-danger';
+            stockLabel = 'Rupture';
+        } else if (stock <= seuil) {
+            stockClass = 'badge-warning';
+        }
+
+        // === Construction des boutons d'action selon le rôle ===
+        let actionsHtml = '';
+
+        if (Permissions.peutModifier) {
+            actionsHtml += `
+                <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${m.id}" title="Modifier">
+                    <span data-icon="edit"></span>
+                </button>
+                <button class="btn btn-ghost btn-icon" data-action="toggle" data-id="${m.id}" title="${m.actif ? 'Désactiver' : 'Activer'}">
+                    <span data-icon="power"></span>
+                </button>
+            `;
+        }
+
+        if (Permissions.peutSupprimer) {
+            actionsHtml += `
+                <button class="btn btn-ghost btn-icon" data-action="delete" data-id="${m.id}" title="Supprimer">
+                    <span data-icon="trash"></span>
+                </button>
+            `;
+        }
+
+        // Si aucune action disponible (Vendeur) → tiret
+        if (!Permissions.peutModifier && !Permissions.peutSupprimer) {
+            actionsHtml = '<span class="text-muted">—</span>';
+        }
+
+        // === Ligne HTML ===
         return `
             <tr>
                 <td><code>${escapeHtml(m.code_cip)}</code></td>
@@ -132,8 +288,14 @@ function renderTable() {
                     <strong>${escapeHtml(m.nom)}</strong>
                     ${m.denomination_commune ? `<br><small class="text-muted">${escapeHtml(m.denomination_commune)}</small>` : ''}
                 </td>
-                <td>${m.categorie ? `<span class="badge badge-neutral">${escapeHtml(m.categorie)}</span>` : '—'}</td>
-                <td class="text-right"><strong>${formatMoney(m.prix_vente_ttc_reference)}</strong></td>
+                <td>
+                    ${m.categorie
+                        ? `<span class="badge badge-neutral">${escapeHtml(m.categorie)}</span>`
+                        : '—'}
+                </td>
+                <td class="text-right">
+                    <strong>${formatMoney(m.prix_vente_ttc_reference)}</strong>
+                </td>
                 <td>
                     <span class="badge ${stockClass}">${stockLabel}</span>
                 </td>
@@ -148,29 +310,25 @@ function renderTable() {
                         : '<span class="badge badge-neutral">Inactif</span>'}
                 </td>
                 <td class="text-right">
-                    <button class="btn btn-ghost btn-icon" onclick="viewMedicament(${m.id})" title="Voir">
-                        <span data-icon="eye"></span>
-                    </button>
-                    <button class="btn btn-ghost btn-icon" onclick="toggleActif(${m.id})" title="${m.actif ? 'Désactiver' : 'Activer'}">
-                        <span data-icon="power"></span>
-                    </button>
-                    ${canWrite ? `
-                        <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${m.id}" title="Modifier">...</button>
-                        <button class="btn btn-ghost btn-icon" data-action="delete" data-id="${m.id}" title="Supprimer">...</button>
-                    ` : ''
-                    }
+                    ${actionsHtml}
                 </td>
             </tr>
         `;
     }).join('');
 
-    // Réinjecter les icônes
+    // Réinjecter les icônes SVG
     tbody.querySelectorAll('[data-icon]').forEach(el => {
         const name = el.getAttribute('data-icon');
         if (Icons[name]) el.innerHTML = Icons[name];
     });
+
+    // Attacher les listeners sur les boutons
+    attachRowListeners();
 }
 
+/**
+ * Affiche la pagination sous le tableau.
+ */
 function renderPagination() {
     const container = document.getElementById('paginationContainer');
     const { current_page, last_page, total } = State.pagination;
@@ -200,16 +358,28 @@ function renderPagination() {
     container.innerHTML = html;
 }
 
+/**
+ * Change de page et recharge les données.
+ */
 function goToPage(page) {
     loadMedicaments(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ============================================================
-// ACTIONS
+// ACTIONS (CRUD)
 // ============================================================
 
+/**
+ * Ouvre le modal en mode "création".
+ */
 function openCreateModal() {
+    // Vérification de permission (sécurité)
+    if (!Permissions.peutCreer) {
+        Toast.error('Vous n\'avez pas la permission de créer un médicament.');
+        return;
+    }
+
     State.editingId = null;
     document.getElementById('modalTitle').textContent = 'Nouveau médicament';
     document.getElementById('submitBtnText').textContent = 'Créer';
@@ -219,7 +389,18 @@ function openCreateModal() {
     document.getElementById('medicamentModal').classList.add('open');
 }
 
+/**
+ * Ouvre le modal en mode "modification" avec les données pré-remplies.
+ *
+ * @param {number} id  ID du médicament à modifier
+ */
 function editMedicament(id) {
+    // Vérification de permission (sécurité)
+    if (!Permissions.peutModifier) {
+        Toast.error('Vous n\'avez pas la permission de modifier un médicament.');
+        return;
+    }
+
     const m = State.medicaments.find(x => x.id === id);
     if (!m) return;
 
@@ -227,35 +408,49 @@ function editMedicament(id) {
     document.getElementById('modalTitle').textContent = 'Modifier le médicament';
     document.getElementById('submitBtnText').textContent = 'Enregistrer';
 
-    document.getElementById('medicamentId').value = m.id;
-    document.getElementById('codeCip').value = m.code_cip || '';
-    document.getElementById('codeBarre').value = m.code_barre || '';
-    document.getElementById('nom').value = m.nom || '';
-    document.getElementById('denominationCommune').value = m.denomination_commune || '';
-    document.getElementById('laboratoire').value = m.laboratoire || '';
-    document.getElementById('forme').value = m.forme || '';
-    document.getElementById('dosage').value = m.dosage || '';
-    document.getElementById('categorie').value = m.categorie || '';
-    document.getElementById('voieAdministration').value = m.voie_administration || '';
-    document.getElementById('prixVente').value = m.prix_vente_ttc_reference || '';
-    document.getElementById('tauxTva').value = m.taux_tva || 0;
-    document.getElementById('seuilAlerte').value = m.seuil_alerte || 10;
-    document.getElementById('stockMax').value = m.stock_max || '';
-    document.getElementById('delaiAttente').value = m.delai_attente || '';
-    document.getElementById('posologie').value = m.posologie || '';
-    document.getElementById('surOrdonnance').checked = !!m.sur_ordonnance;
-    document.getElementById('usagePreventif').checked = !!m.usage_preventif;
-    document.getElementById('actif').checked = !!m.actif;
+    // Pré-remplir les champs
+    document.getElementById('medicamentId').value            = m.id;
+    document.getElementById('codeCip').value                 = m.code_cip || '';
+    document.getElementById('codeBarre').value               = m.code_barre || '';
+    document.getElementById('nom').value                     = m.nom || '';
+    document.getElementById('denominationCommune').value     = m.denomination_commune || '';
+    document.getElementById('laboratoire').value             = m.laboratoire || '';
+    document.getElementById('forme').value                   = m.forme || '';
+    document.getElementById('dosage').value                  = m.dosage || '';
+    document.getElementById('voieAdministration').value      = m.voie_administration || '';
+    document.getElementById('prixVente').value               = m.prix_vente_ttc_reference || '';
+    document.getElementById('tauxTva').value                 = m.taux_tva || 0;
+    document.getElementById('seuilAlerte').value             = m.seuil_alerte || 10;
+    document.getElementById('stockMax').value                = m.stock_max || '';
+    document.getElementById('delaiAttente').value            = m.delai_attente || '';
+    document.getElementById('posologie').value               = m.posologie || '';
+    document.getElementById('surOrdonnance').checked         = !!m.sur_ordonnance;
+    document.getElementById('usagePreventif').checked        = !!m.usage_preventif;
+    document.getElementById('actif').checked                 = !!m.actif;
+
+    // Gérer le <select> catégorie (ajouter l'option si elle n'existe pas)
+    const categorieSelect = document.getElementById('categorie');
+    if (m.categorie && ![...categorieSelect.options].some(o => o.value === m.categorie)) {
+        const opt = document.createElement('option');
+        opt.value = m.categorie;
+        opt.textContent = m.categorie;
+        categorieSelect.appendChild(opt);
+    }
+    categorieSelect.value = m.categorie || '';
 
     clearFormErrors();
     document.getElementById('medicamentModal').classList.add('open');
 }
 
-function viewMedicament(id) {
-    window.location.href = `medicament-detail.html?id=${id}`;
-}
-
+/**
+ * Active ou désactive un médicament.
+ */
 async function toggleActif(id) {
+    if (!Permissions.peutModifier) {
+        Toast.error('Vous n\'avez pas la permission de modifier le statut.');
+        return;
+    }
+
     try {
         const response = await Api.post(`/medicaments/${id}/toggle-actif`);
         Toast.success(response.message);
@@ -265,9 +460,21 @@ async function toggleActif(id) {
     }
 }
 
-function deleteMedicament(id, nom) {
+/**
+ * Supprime (soft delete) un médicament après confirmation.
+ */
+function deleteMedicament(id) {
+    if (!Permissions.peutSupprimer) {
+        Toast.error('Vous n\'avez pas la permission de supprimer un médicament.');
+        return;
+    }
+
+    const m = State.medicaments.find(x => x.id === id);
+    if (!m) return;
+
     showConfirm(
-        `Voulez-vous vraiment supprimer <strong>${escapeHtml(nom)}</strong> ?<br><small>Le médicament sera marqué comme supprimé (soft delete).</small>`,
+        `Voulez-vous vraiment supprimer <strong>${escapeHtml(m.nom)}</strong> ?<br>
+         <small>Le médicament sera marqué comme supprimé (soft delete).</small>`,
         async () => {
             try {
                 const response = await Api.delete(`/medicaments/${id}`);
@@ -281,18 +488,23 @@ function deleteMedicament(id, nom) {
 }
 
 // ============================================================
-// FORMULAIRE
+// SOUMISSION DU FORMULAIRE
 // ============================================================
 
+/**
+ * Gère la soumission du formulaire (création OU modification).
+ */
 async function submitMedicamentForm(e) {
     e.preventDefault();
     clearFormErrors();
 
     const btn = document.getElementById('modalSubmitBtn');
     const originalText = document.getElementById('submitBtnText').textContent;
+
     btn.disabled = true;
     document.getElementById('submitBtnText').textContent = 'Enregistrement...';
 
+    // Construire le payload
     const data = {
         code_cip:                 document.getElementById('codeCip').value.trim(),
         code_barre:               document.getElementById('codeBarre').value.trim() || null,
@@ -301,7 +513,7 @@ async function submitMedicamentForm(e) {
         laboratoire:              document.getElementById('laboratoire').value.trim() || null,
         forme:                    document.getElementById('forme').value.trim() || null,
         dosage:                   document.getElementById('dosage').value.trim() || null,
-        categorie:                document.getElementById('categorie').value.trim() || null,
+        categorie:                document.getElementById('categorie').value || null,
         voie_administration:      document.getElementById('voieAdministration').value.trim() || null,
         prix_vente_ttc_reference: parseFloat(document.getElementById('prixVente').value) || 0,
         taux_tva:                 parseFloat(document.getElementById('tauxTva').value) || 0,
@@ -327,6 +539,7 @@ async function submitMedicamentForm(e) {
         await loadMedicaments(State.pagination.current_page || 1);
     } catch (error) {
         if (error.errors) {
+            // Erreurs de validation par champ
             Object.entries(error.errors).forEach(([field, messages]) => {
                 showFieldError(field, messages[0]);
             });
@@ -343,12 +556,21 @@ async function submitMedicamentForm(e) {
 // MODALS
 // ============================================================
 
+/**
+ * Ferme un modal par son ID.
+ */
 function closeModal(id) {
     document.getElementById(id).classList.remove('open');
 }
 
 let confirmCallback = null;
 
+/**
+ * Affiche un modal de confirmation.
+ *
+ * @param {string}   message
+ * @param {Function} callback  Fonction à exécuter si l'utilisateur confirme
+ */
 function showConfirm(message, callback) {
     document.getElementById('confirmMessage').innerHTML = message;
     confirmCallback = callback;
@@ -356,28 +578,36 @@ function showConfirm(message, callback) {
 }
 
 // ============================================================
-// EVENT LISTENERS
+// LISTENERS
 // ============================================================
 
+/**
+ * Branche les événements sur les boutons et les filtres.
+ */
 function setupEventListeners() {
-    document.getElementById('addBtn').addEventListener('click', openCreateModal);
+    // Bouton "+ Nouveau" (si visible)
+    const addBtn = document.getElementById('addBtn');
+    if (addBtn) addBtn.addEventListener('click', openCreateModal);
 
-    document.getElementById('modalCloseBtn').addEventListener('click', () => closeModal('medicamentModal'));
-    document.getElementById('modalCancelBtn').addEventListener('click', () => closeModal('medicamentModal'));
-    document.getElementById('confirmCloseBtn').addEventListener('click', () => closeModal('confirmModal'));
-    document.getElementById('confirmCancelBtn').addEventListener('click', () => closeModal('confirmModal'));
+    // Fermeture des modals
+    document.getElementById('modalCloseBtn')?.addEventListener('click', () => closeModal('medicamentModal'));
+    document.getElementById('modalCancelBtn')?.addEventListener('click', () => closeModal('medicamentModal'));
+    document.getElementById('confirmCloseBtn')?.addEventListener('click', () => closeModal('confirmModal'));
+    document.getElementById('confirmCancelBtn')?.addEventListener('click', () => closeModal('confirmModal'));
 
-    document.getElementById('confirmOkBtn').addEventListener('click', async () => {
+    // Confirmation de suppression
+    document.getElementById('confirmOkBtn')?.addEventListener('click', async () => {
         if (confirmCallback) await confirmCallback();
         closeModal('confirmModal');
         confirmCallback = null;
     });
 
-    document.getElementById('medicamentForm').addEventListener('submit', submitMedicamentForm);
+    // Soumission du formulaire
+    document.getElementById('medicamentForm')?.addEventListener('submit', submitMedicamentForm);
 
-    // Filtres
+    // Filtre : recherche (avec debounce de 400ms)
     let searchTimeout;
-    document.getElementById('searchInput').addEventListener('input', (e) => {
+    document.getElementById('searchInput')?.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             State.filters.search = e.target.value.trim();
@@ -385,22 +615,24 @@ function setupEventListeners() {
         }, 400);
     });
 
-    document.getElementById('filterCategorie').addEventListener('change', (e) => {
+    // Filtres déroulants
+    document.getElementById('filterCategorie')?.addEventListener('change', (e) => {
         State.filters.categorie = e.target.value;
         loadMedicaments(1);
     });
 
-    document.getElementById('filterOrdonnance').addEventListener('change', (e) => {
+    document.getElementById('filterOrdonnance')?.addEventListener('change', (e) => {
         State.filters.sur_ordonnance = e.target.value;
         loadMedicaments(1);
     });
 
-    document.getElementById('filterActif').addEventListener('change', (e) => {
+    document.getElementById('filterActif')?.addEventListener('change', (e) => {
         State.filters.actif = e.target.value;
         loadMedicaments(1);
     });
 
-    document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+    // Réinitialisation des filtres
+    document.getElementById('resetFiltersBtn')?.addEventListener('click', () => {
         State.filters = { search: '', categorie: '', sur_ordonnance: '', actif: '' };
         document.getElementById('searchInput').value = '';
         document.getElementById('filterCategorie').value = '';
@@ -409,20 +641,53 @@ function setupEventListeners() {
         loadMedicaments(1);
     });
 
-    // Fermer modal si clic sur overlay
+    // Fermer un modal si clic sur l'overlay
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.classList.remove('open');
-            }
+            if (e.target === overlay) overlay.classList.remove('open');
         });
     });
+}
+
+// ============================================================
+// DÉLÉGATION D'ÉVÉNEMENTS SUR LE TABLEAU
+// ============================================================
+
+/**
+ * Attache les listeners sur les boutons d'action du tableau.
+ * Utilise la délégation d'événement (un seul listener sur le tbody).
+ */
+function attachRowListeners() {
+    const tbody = document.getElementById('medicamentsTbody');
+    tbody.removeEventListener('click', handleRowClick);
+    tbody.addEventListener('click', handleRowClick);
+}
+
+/**
+ * Gère les clics sur les boutons d'action (edit / toggle / delete).
+ */
+function handleRowClick(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+
+    const action = btn.getAttribute('data-action');
+    const id     = parseInt(btn.getAttribute('data-id'), 10);
+    if (!id) return;
+
+    switch (action) {
+        case 'edit':   editMedicament(id); break;
+        case 'toggle': toggleActif(id); break;
+        case 'delete': deleteMedicament(id); break;
+    }
 }
 
 // ============================================================
 // HELPERS
 // ============================================================
 
+/**
+ * Affiche une erreur sous un champ.
+ */
 function showFieldError(field, message) {
     const el = document.querySelector(`[data-error-for="${field}"]`);
     if (el) el.textContent = message;
@@ -431,11 +696,17 @@ function showFieldError(field, message) {
     if (input) input.classList.add('error');
 }
 
+/**
+ * Efface toutes les erreurs du formulaire.
+ */
 function clearFormErrors() {
     document.querySelectorAll('.field-error').forEach(el => el.textContent = '');
     document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
 }
 
+/**
+ * Convertit un nom de champ API en ID d'input HTML.
+ */
 function fieldToInputId(field) {
     const map = {
         code_cip: 'codeCip',
@@ -446,6 +717,9 @@ function fieldToInputId(field) {
     return map[field] || field;
 }
 
+/**
+ * Formate un montant en BIF.
+ */
 function formatMoney(value) {
     return new Intl.NumberFormat('fr-BI', {
         style: 'currency',
@@ -454,18 +728,12 @@ function formatMoney(value) {
     }).format(value || 0);
 }
 
+/**
+ * Échappe le HTML pour éviter les injections XSS.
+ */
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-
-// Masquer les boutons d'écriture pour les Vendeurs
-const user = Storage.getUser();
-const isVendeur = user?.role === 'Vendeur';
-
-if (isVendeur) {
-    document.getElementById('addBtn')?.style.setProperty('display', 'none');
 }
