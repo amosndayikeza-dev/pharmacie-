@@ -23,31 +23,37 @@ class ProprietaireController extends Controller
      *
      * GET /api/v1/proprietaires
      */
-    public function index(Request $request): AnonymousResourceCollection
-    {
-        $query = Proprietaire::query()
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $q->where(function ($sub) use ($request) {
-                    $sub->where('nom', 'like', "%{$request->search}%")
-                        ->orWhere('prenom', 'like', "%{$request->search}%")
-                        ->orWhere('raison_sociale', 'like', "%{$request->search}%")
-                        ->orWhere('telephone', 'like', "%{$request->search}%")
-                        ->orWhere('email', 'like', "%{$request->search}%");
-                });
-            })
-            ->when($request->filled('type'), function ($q) use ($request) {
-                $q->where('type', $request->type);
-            })
-            ->when($request->filled('ville'), function ($q) use ($request) {
-                $q->where('ville', $request->ville);
-            })
-            ->orderBy('nom')
-            ->orderBy('prenom');
+public function index(Request $request): AnonymousResourceCollection
+{
+    $query = Proprietaire::query()
+        ->with([
+            'animaux:id,proprietaire_id,nom,espece_id',
+            'animaux.espece:id,nom',
+        ])
+        ->withCount(['animaux', 'ventes'])
+        ->when($request->filled('search'), function ($q) use ($request) {
+            $s = $request->search;
+            $q->where(function ($sub) use ($s) {
+                $sub->where('nom', 'like', "%{$s}%")
+                    ->orWhere('prenom', 'like', "%{$s}%")
+                    ->orWhere('raison_sociale', 'like', "%{$s}%")
+                    ->orWhere('telephone', 'like', "%{$s}%")
+                    ->orWhere('email', 'like', "%{$s}%");
+            });
+        })
+        ->when($request->filled('type'), fn ($q) =>
+            $q->where('type', $request->type)
+        )
+        ->when($request->filled('ville'), fn ($q) =>
+            $q->where('ville', $request->ville)
+        )
+        ->orderBy('nom')
+        ->orderBy('prenom');
 
-        $proprietaires = $query->paginate($request->input('per_page', 20));
+    $perPage = min((int) $request->input('per_page', 20), 100);
 
-        return ProprietaireResource::collection($proprietaires);
-    }
+    return ProprietaireResource::collection($query->paginate($perPage));
+}
 
     /**
      * Détail d'un propriétaire.

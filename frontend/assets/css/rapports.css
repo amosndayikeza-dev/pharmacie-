@@ -291,3 +291,74 @@
         width: 100%;
     }
 }
+
+/* ============================================================
+   RAPPORTS — Améliorations
+   ============================================================ */
+
+.stats-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.card-subtitle {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
+.chart-container.chart-large {
+    height: 340px;
+}
+
+/* Résumé financier */
+.finance-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.finance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.95rem;
+}
+
+.finance-row:last-child {
+    border-bottom: none;
+}
+
+.finance-row span {
+    color: var(--color-text-muted);
+}
+
+.finance-row strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.finance-row-total {
+    border-top: 2px solid var(--color-border);
+    border-bottom: 2px solid var(--color-border);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.finance-row-total span {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .finance-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+}

@@ -1,10 +1,17 @@
 /**
- * Logique de la page Rapports.
+ * ============================================================
+ * LOGIQUE DE LA PAGE RAPPORTS
+ * ============================================================
  *
- * Gère :
- *  - Chargement auto des rapports (avec génération si 404)
- *  - Onglets de période (jour / hebdo / mensuel / annuel / custom)
- *  - Stats, top médicament, répartition paiements
+ * Permet de consulter les rapports sur différentes périodes :
+ *   - Jour    (aujourd'hui)
+ *   - Hebdo   (semaine en cours)
+ *   - Mensuel (mois en cours)
+ *   - Annuel  (année en cours)
+ *   - Custom  (période personnalisée)
+ *
+ * Affiche : CA facturé, CA encaissé, bénéfice, créances,
+ *           tickets, clients uniques, panier moyen
  */
 
 Guard.requireAuth();
@@ -15,14 +22,19 @@ const State = {
     dateFin: null,
 };
 
-// === Init ===
+let chartEvolution = null;
+let chartRepartition = null;
+
+// ============================================================
+// INIT
+// ============================================================
+
 document.addEventListener('DOMContentLoaded', async () => {
-    // Par défaut : aujourd'hui
     const today = new Date().toISOString().split('T')[0];
     State.dateDebut = today;
     State.dateFin = today;
 
-    // ⚠️ Générer les rapports AVANT de charger (idempotent côté backend)
+    // Générer les rapports du jour avant de charger
     try {
         await Api.post('/rapports/generer');
     } catch (e) {
@@ -38,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ============================================================
 
 async function chargerRapport(period, dateDebut = null, dateFin = null) {
-    const loader = document.getElementById('loader');
+    const loader  = document.getElementById('loader');
     const content = document.getElementById('content');
 
     loader.hidden = false;
@@ -63,15 +75,13 @@ async function chargerRapport(period, dateDebut = null, dateFin = null) {
         }
 
         const response = await Api.get(url);
-        const data = response.data;
-
-        renderRapport(data, response.meta);
+        renderRapport(response.data, response.meta);
         content.hidden = false;
     } catch (error) {
-        // Cas 404 : pas encore de rapport → générer puis réessayer
-        if (error.status === 404 && period === 'jour') {
-            console.log('[Rapports] Aucun rapport pour cette date, génération...');
+        console.error('[Rapports]', error);
 
+        // Cas 404 → générer puis réessayer
+        if (error.status === 404 && period === 'jour') {
             try {
                 await Api.post('/rapports/generer');
                 const date = dateDebut || new Date().toISOString().split('T')[0];
@@ -80,17 +90,13 @@ async function chargerRapport(period, dateDebut = null, dateFin = null) {
                 content.hidden = false;
                 Toast.info('Rapport généré automatiquement.');
                 return;
-            } catch (retryError) {
-                console.warn('[Rapports] Échec après génération :', retryError);
+            } catch (e) {
                 showEmptyState();
                 return;
             }
         }
 
-        // Autres erreurs (500, 401, réseau...)
-        const msg = error.status ? `[${error.status}] ${error.message}` : error.message;
-        console.error('[Rapports]', error);
-        Toast.error('Erreur de chargement : ' + msg);
+        Toast.error('Erreur : ' + (error.message || 'inconnue'));
         showEmptyState();
     } finally {
         loader.hidden = true;
@@ -105,12 +111,11 @@ function renderRapport(data, meta) {
     let stats;
     let periodLabelText;
 
-    // Si c'est un tableau (hebdo/mensuel/annuel), on agrège
+    // Si tableau (hebdo/mensuel/annuel) → agréger
     if (Array.isArray(data)) {
         stats = agregerRapports(data);
         periodLabelText = labelPeriode(State.period, data);
     } else if (data === null || data === undefined) {
-        // Pas de rapport
         showEmptyState();
         return;
     } else {
@@ -120,61 +125,91 @@ function renderRapport(data, meta) {
 
     document.getElementById('periodLabel').textContent = periodLabelText;
 
-    // Cartes stats
-    const totalTtc = parseFloat(stats.total_ca_ttc || 0);
-    const totalHt  = parseFloat(stats.total_ca_ht  || 0);
-    const totalMarge = parseFloat(stats.total_marge_brute_ttc || 0);
-    const nbTickets = parseInt(stats.nb_tickets || 0);
-    const nbClients = parseInt(stats.nb_clients_uniques || 0);
-    const panierMoyen = parseFloat(stats.panier_moyen || 0);
+    // ═══════════════════════════════════════════════════════
+    // STATS PRINCIPALES
+    // ═══════════════════════════════════════════════════════
+    const caTtc      = parseFloat(stats.total_ca_ttc || 0);
+    const caHt       = parseFloat(stats.total_ca_ht || 0);
+    const caTva      = parseFloat(stats.total_ca_tva || 0);
+    const caEncaisse = parseFloat(stats.total_ca_encaisse ?? caTtc);   // fallback si pas dispo
+    const creances   = parseFloat(stats.creances ?? 0);
+    const marge      = parseFloat(stats.total_marge_brute_ttc || 0);
+    const nbTickets  = parseInt(stats.nb_tickets || 0);
+    const nbClients  = parseInt(stats.nb_clients_uniques || 0);
+    const panier     = parseFloat(stats.panier_moyen || 0);
 
-    document.getElementById('statCaTtc').textContent = formatMoney(totalTtc);
-    document.getElementById('statCaHt').textContent  = `HT : ${formatMoney(totalHt)}`;
-    document.getElementById('statMarge').textContent = formatMoney(totalMarge);
+    setText('statCaTtc',      formatMoney(caTtc));
+    setText('statCaHt',       `HT : ${formatMoney(caHt)}`);
 
-    const margePct = totalTtc > 0
-        ? ((totalMarge / totalTtc) * 100).toFixed(1) + '%'
-        : '—';
-    document.getElementById('statMargePct').textContent = `Soit ${margePct} du CA`;
+    setText('statCaEncaisse', formatMoney(caEncaisse));
+    setText('statPctEncaisse', caTtc > 0
+        ? `${((caEncaisse / caTtc) * 100).toFixed(0)}% encaissé`
+        : 'Aucune vente');
 
-    document.getElementById('statTickets').textContent = nbTickets;
-    document.getElementById('statClients').textContent = `${nbClients} client(s) unique(s)`;
+    setText('statMarge',      formatMoney(marge));
+    setText('statMargePct',   caTtc > 0
+        ? `Marge : ${((marge / caTtc) * 100).toFixed(1)}%`
+        : '—');
 
-    document.getElementById('statPanier').textContent = formatMoney(panierMoyen);
+    setText('statCreances',   formatMoney(creances));
 
-    // Top médicament
-    renderTopMedicament(stats);
+    setText('statTickets',    nbTickets);
+    setText('statClients',    nbClients);
+    setText('statPanier',     formatMoney(panier));
 
-    // Répartition paiements
-    renderRepartitionPaiements(stats);
+    // ═══════════════════════════════════════════════════════
+    // RÉSUMÉ FINANCIER
+    // ═══════════════════════════════════════════════════════
+    setText('financeCaHt',       formatMoney(caHt));
+    setText('financeCaTva',      formatMoney(caTva));
+    setText('financeCaTtc',      formatMoney(caTtc));
+    setText('financeCaEncaisse', formatMoney(caEncaisse));
+    setText('financeCreances',   formatMoney(creances));
+    setText('financeBenefice',   formatMoney(marge));
+
+    // ═══════════════════════════════════════════════════════
+    // GRAPHIQUES
+    // ═══════════════════════════════════════════════════════
+    if (typeof Chart !== 'undefined') {
+        renderChartEvolution(Array.isArray(data) ? data : [data]);
+        renderChartRepartition(stats);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // TOP MÉDICAMENTS
+    // ═══════════════════════════════════════════════════════
+    renderTopMedicaments(stats);
 }
 
 function agregerRapports(rapports) {
     const agg = {
         total_ca_ht: 0, total_ca_tva: 0, total_ca_ttc: 0,
+        total_ca_encaisse: 0,
         total_marge_brute_ttc: 0,
         nb_tickets: 0, nb_clients_uniques: 0,
         total_especes: 0, total_carte: 0, total_mobile_money: 0, total_credit: 0,
+        top_medicament: null,
     };
 
     rapports.forEach(r => {
-        agg.total_ca_ht           += parseFloat(r.total_ca_ht || 0);
-        agg.total_ca_tva          += parseFloat(r.total_ca_tva || 0);
-        agg.total_ca_ttc          += parseFloat(r.total_ca_ttc || 0);
+        agg.total_ca_ht          += parseFloat(r.total_ca_ht || 0);
+        agg.total_ca_tva         += parseFloat(r.total_ca_tva || 0);
+        agg.total_ca_ttc         += parseFloat(r.total_ca_ttc || 0);
+        agg.total_ca_encaisse    += parseFloat(r.total_ca_encaisse ?? r.total_especes ?? 0);
         agg.total_marge_brute_ttc += parseFloat(r.total_marge_brute_ttc || 0);
-        agg.nb_tickets            += parseInt(r.nb_tickets || 0);
-        agg.nb_clients_uniques    += parseInt(r.nb_clients_uniques || 0);
-        agg.total_especes         += parseFloat(r.total_especes || 0);
-        agg.total_carte           += parseFloat(r.total_carte || 0);
-        agg.total_mobile_money    += parseFloat(r.total_mobile_money || 0);
-        agg.total_credit          += parseFloat(r.total_credit || 0);
+        agg.nb_tickets           += parseInt(r.nb_tickets || 0);
+        agg.nb_clients_uniques   += parseInt(r.nb_clients_uniques || 0);
+        agg.total_especes        += parseFloat(r.total_especes || 0);
+        agg.total_carte          += parseFloat(r.total_carte || 0);
+        agg.total_mobile_money   += parseFloat(r.total_mobile_money || 0);
+        agg.total_credit         += parseFloat(r.total_credit || 0);
     });
 
     agg.panier_moyen = agg.nb_tickets > 0
         ? agg.total_ca_ttc / agg.nb_tickets
         : 0;
 
-    // Top médicament : premier trouvé
+    // Top médicament (prend le premier trouvé)
     const firstWithTop = rapports.find(r => r.top_medicament);
     if (firstWithTop) {
         agg.top_medicament = firstWithTop.top_medicament;
@@ -183,101 +218,223 @@ function agregerRapports(rapports) {
     return agg;
 }
 
-function renderTopMedicament(stats) {
-    const container = document.getElementById('topMedicamentCard');
-
-    if (!stats.top_medicament) {
-        container.innerHTML = `<p class="empty">Aucune vente sur la période</p>`;
-        return;
-    }
+function renderTopMedicaments(stats) {
+    const tbody = document.getElementById('topMedicamentsTbody');
+    if (!tbody) return;
 
     const tm = stats.top_medicament;
 
-    container.innerHTML = `
-        <div class="top-medicament">
-            <div class="top-med-rank">🏆</div>
-            <div class="top-med-info">
+    if (!tm) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" class="empty">
+                    Aucune vente sur la période
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const qte = tm.quantite_vendue || stats.top_medicament_quantite || 0;
+    const ca  = tm.ca_total || 0;
+
+    tbody.innerHTML = `
+        <tr>
+            <td>
                 <strong>${escapeHtml(tm.nom || '—')}</strong>
-                <small>${escapeHtml(tm.code_cip || '')}</small>
-            </div>
-            <div class="top-med-qte">
-                <strong>${tm.quantite_vendue || stats.top_medicament_quantite || 0}</strong>
-                <small>vendus</small>
-            </div>
-        </div>
+                <br><small class="text-muted">${escapeHtml(tm.code_cip || '')}</small>
+            </td>
+            <td class="text-right">${qte}</td>
+            <td class="text-right">${formatMoney(ca)}</td>
+        </tr>
     `;
 }
 
-function renderRepartitionPaiements(stats) {
-    const container = document.getElementById('repartitionPaiements');
-
-    const repartition = [
-        { label: 'Espèces',      value: parseFloat(stats.total_especes || 0),      icon: '💵', color: '#059669' },
-        { label: 'Carte',        value: parseFloat(stats.total_carte || 0),        icon: '💳', color: '#3b82f6' },
-        { label: 'Mobile Money', value: parseFloat(stats.total_mobile_money || 0), icon: '📱', color: '#8b5cf6' },
-        { label: 'Crédit',       value: parseFloat(stats.total_credit || 0),       icon: '📝', color: '#f59e0b' },
-    ];
-
-    const total = repartition.reduce((s, r) => s + r.value, 0);
-
-    if (total === 0) {
-        container.innerHTML = `<p class="empty">Aucun paiement sur la période</p>`;
-    } else {
-        container.innerHTML = repartition.map(r => {
-            const pct = total > 0 ? (r.value / total) * 100 : 0;
-
-            return `
-                <div class="repartition-ligne">
-                    <div class="repartition-label">
-                        <span>${r.icon}</span>
-                        <span>${r.label}</span>
-                        <strong>${formatMoney(r.value)}</strong>
-                    </div>
-                    <div class="repartition-bar">
-                        <div class="repartition-bar-fill" style="width: ${pct}%; background: ${r.color};"></div>
-                    </div>
-                    <div class="repartition-pct">${pct.toFixed(1)}%</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // Détails chiffrés (3 cartes en bas)
-    document.getElementById('detailEspeces').innerHTML = formatBigMoney(stats.total_especes || 0);
-    document.getElementById('detailCarte').innerHTML   = formatBigMoney(stats.total_carte || 0);
-    document.getElementById('detailMobile').innerHTML  = formatBigMoney(stats.total_mobile_money || 0);
-}
-
-/**
- * Affiche un état vide quand le rapport n'existe pas.
- */
 function showEmptyState() {
     const content = document.getElementById('content');
 
-    // Cartes stats à zéro
-    document.getElementById('statCaTtc').textContent = formatMoney(0);
-    document.getElementById('statCaHt').textContent  = `HT : ${formatMoney(0)}`;
-    document.getElementById('statMarge').textContent = formatMoney(0);
-    document.getElementById('statMargePct').textContent = 'Aucune donnée';
-    document.getElementById('statTickets').textContent = '0';
-    document.getElementById('statClients').textContent = '0 client(s) unique(s)';
-    document.getElementById('statPanier').textContent = formatMoney(0);
+    ['statCaTtc', 'statCaEncaisse', 'statMarge', 'statCreances',
+     'statTickets', 'statClients', 'statPanier'].forEach(id => {
+        setText(id, '0 BIF');
+    });
 
-    // Sections vides
-    document.getElementById('topMedicamentCard').innerHTML =
-        `<p class="empty">Aucune vente sur la période</p>`;
+    setText('statCaHt', 'HT : 0 BIF');
+    setText('statPctEncaisse', 'Aucune vente');
+    setText('statMargePct', '—');
 
-    document.getElementById('repartitionPaiements').innerHTML =
-        `<p class="empty">Aucun paiement sur la période</p>`;
+    setText('financeCaHt', '0 BIF');
+    setText('financeCaTva', '0 BIF');
+    setText('financeCaTtc', '0 BIF');
+    setText('financeCaEncaisse', '0 BIF');
+    setText('financeCreances', '0 BIF');
+    setText('financeBenefice', '0 BIF');
 
-    document.getElementById('detailEspeces').innerHTML = formatBigMoney(0);
-    document.getElementById('detailCarte').innerHTML   = formatBigMoney(0);
-    document.getElementById('detailMobile').innerHTML  = formatBigMoney(0);
+    const tbody = document.getElementById('topMedicamentsTbody');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="3" class="empty">Aucune vente</td></tr>`;
+    }
 
-    document.getElementById('periodLabel').textContent = 'Aucun rapport disponible pour cette période';
+    setText('periodLabel', 'Aucun rapport pour cette période');
 
     content.hidden = false;
 }
+
+// ============================================================
+// GRAPHIQUES
+// ============================================================
+
+function renderChartEvolution(rapports) {
+    if (typeof Chart === 'undefined') return;
+
+    const canvas = document.getElementById('chartEvolution');
+    if (!canvas) return;
+
+    if (chartEvolution) chartEvolution.destroy();
+
+    // Si 1 seul rapport → dupliquer en 2 points pour tracer une ligne
+    const labels = rapports.length > 1
+        ? rapports.map(r => formatShortDate(r.date_reference))
+        : ['Début', 'Fin'];
+
+    const caFacture = rapports.length > 1
+        ? rapports.map(r => parseFloat(r.total_ca_ttc || 0))
+        : [0, parseFloat(rapports[0]?.total_ca_ttc || 0)];
+
+    const caEncaisse = rapports.length > 1
+        ? rapports.map(r => parseFloat(r.total_ca_encaisse ?? r.total_especes ?? 0))
+        : [0, parseFloat(rapports[0]?.total_ca_encaisse ?? rapports[0]?.total_especes ?? 0)];
+
+    const ctx = canvas.getContext('2d');
+
+    const gradientFacture = ctx.createLinearGradient(0, 0, 0, 340);
+    gradientFacture.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
+    gradientFacture.addColorStop(1, 'rgba(99, 102, 241, 0.02)');
+
+    const gradientEncaisse = ctx.createLinearGradient(0, 0, 0, 340);
+    gradientEncaisse.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+    gradientEncaisse.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+
+    chartEvolution = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'CA facturé',
+                    data: caFacture,
+                    borderColor: '#6366f1',
+                    backgroundColor: gradientFacture,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                },
+                {
+                    label: 'CA encaissé',
+                    data: caEncaisse,
+                    borderColor: '#10b981',
+                    backgroundColor: gradientEncaisse,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, pointStyle: 'circle', padding: 20 },
+                },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    padding: 12,
+                    callbacks: {
+                        label: (ctx) => `${ctx.dataset.label} : ${formatMoney(ctx.parsed.y)}`,
+                    },
+                },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (v) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' :
+                                          v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v,
+                    },
+                    grid: { color: '#f3f4f6' },
+                },
+                x: { grid: { display: false } },
+            },
+        },
+    });
+}
+
+function renderChartRepartition(stats) {
+    if (typeof Chart === 'undefined') return;
+
+    const canvas = document.getElementById('chartRepartition');
+    if (!canvas) return;
+
+    if (chartRepartition) chartRepartition.destroy();
+
+    const especes = parseFloat(stats.total_especes || 0);
+    const carte   = parseFloat(stats.total_carte || 0);
+    const mobile  = parseFloat(stats.total_mobile_money || 0);
+    const credit  = parseFloat(stats.total_credit || 0);
+    const total   = especes + carte + mobile + credit;
+
+    if (total === 0) {
+        canvas.parentElement.innerHTML = '<p class="empty">Aucun paiement sur la période</p>';
+        return;
+    }
+
+    chartRepartition = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Espèces', 'Carte', 'Mobile Money', 'Crédit'],
+            datasets: [{
+                data: [especes, carte, mobile, credit],
+                backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'],
+                borderWidth: 2,
+                borderColor: '#fff',
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { usePointStyle: true, pointStyle: 'circle', padding: 14 },
+                },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    padding: 12,
+                    callbacks: {
+                        label: (ctx) => {
+                            const pct = ((ctx.parsed / total) * 100).toFixed(1);
+                            return `${ctx.label} : ${formatMoney(ctx.parsed)} (${pct}%)`;
+                        },
+                    },
+                },
+            },
+        },
+    });
+}
+
+// ============================================================
+// LABELS PÉRIODE
+// ============================================================
 
 function labelPeriode(period, extra) {
     const today = new Date();
@@ -291,12 +448,8 @@ function labelPeriode(period, extra) {
             return `Aujourd'hui — ${formatted.charAt(0).toUpperCase() + formatted.slice(1)}`;
         }
         case 'hebdo': {
-            const debut = Array.isArray(extra) && extra.length > 0
-                ? extra[0].date_reference
-                : null;
-            const fin = Array.isArray(extra) && extra.length > 0
-                ? extra[extra.length - 1].date_reference
-                : null;
+            const debut = Array.isArray(extra) && extra.length > 0 ? extra[0].date_reference : null;
+            const fin   = Array.isArray(extra) && extra.length > 0 ? extra[extra.length - 1].date_reference : null;
             return `Semaine — du ${formatShortDate(debut)} au ${formatShortDate(fin)}`;
         }
         case 'mensuel':
@@ -375,16 +528,19 @@ function setupEventListeners() {
         });
     }
 
-    // Générer rapports
+    // Générer
     const genererBtn = document.getElementById('genererBtn');
-    if (genererBtn) {
-        genererBtn.addEventListener('click', genererRapports);
-    }
+    if (genererBtn) genererBtn.addEventListener('click', genererRapports);
 }
 
 // ============================================================
 // HELPERS
 // ============================================================
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
 
 function formatMoney(value) {
     const num = parseFloat(value || 0);
@@ -392,10 +548,6 @@ function formatMoney(value) {
         style: 'currency', currency: 'BIF',
         minimumFractionDigits: 0, maximumFractionDigits: 0,
     }).format(num);
-}
-
-function formatBigMoney(value) {
-    return `<div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary-dark);">${formatMoney(value)}</div>`;
 }
 
 function formatShortDate(iso) {

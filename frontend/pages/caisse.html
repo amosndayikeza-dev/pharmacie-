@@ -136,7 +136,7 @@
 </div>
 
 <!-- ============================================================
-     MODAL : Paiement (multi-paiement)
+     MODAL : Encaissement (Espèces + Crédit)
      ============================================================ -->
 <div class="modal-overlay" id="paiementModal">
     <div class="modal">
@@ -151,26 +151,51 @@
         </div>
 
         <div class="modal-body">
+
+            <!-- Total à payer -->
             <div class="paiement-total">
                 <span>Total à payer</span>
                 <strong id="paiementTotal">0 BIF</strong>
             </div>
 
-            <div class="paiement-lignes" id="paiementLignes">
-                <!-- Une ligne par mode de paiement -->
+            <!-- Montant payé en espèces -->
+            <div class="form-field" style="margin-bottom: 16px;">
+                <label for="montantPaye">Montant payé en espèces (BIF)</label>
+                <input type="number"
+                       id="montantPaye"
+                       min="0"
+                       step="100"
+                       placeholder="0">
+                <span class="field-hint">
+                    Laissez vide si le client ne paie rien (tout à crédit).
+                </span>
             </div>
 
-            <div class="paiement-reste">
-                <span>Reste à payer :</span>
-                <strong id="paiementReste">0 BIF</strong>
+            <!-- Bouton : Payer la totalité -->
+            <button type="button" class="btn btn-secondary" id="payerTotalBtn" style="width: 100%; margin-bottom: 16px;">
+                <span data-icon="check"></span>
+                Payer la totalité
+            </button>
+
+            <!-- Résumé -->
+            <div class="paiement-resume">
+                <div class="paiement-resume-ligne">
+                    <span>Payé en espèces</span>
+                    <strong id="paiementPaye">0 BIF</strong>
+                </div>
+                <div class="paiement-resume-ligne reste">
+                    <span>Reste à crédit</span>
+                    <strong id="paiementReste">0 BIF</strong>
+                </div>
             </div>
+
         </div>
 
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" id="paiementCancelBtn">Annuler</button>
-            <button type="button" class="btn btn-primary" id="paiementValiderBtn" disabled>
+            <button type="button" class="btn btn-primary" id="paiementValiderBtn">
                 <span data-icon="check"></span>
-                Encaisser
+                Valider la vente
             </button>
         </div>
     </div>

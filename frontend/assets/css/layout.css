@@ -52,9 +52,15 @@
     min-height: var(--header-height);
 }
 
-.sidebar-brand-icon {
-    font-size: 1.75rem;
+.sidebar-brand-logo {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
     flex-shrink: 0;
+    border-radius: 8px;
+    background: white;
+    padding: 3px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-brand-text {
@@ -65,8 +71,9 @@
     overflow: hidden;
 }
 
-.sidebar-collapsed .sidebar-brand-text {
-    display: none;
+.sidebar-collapsed .sidebar-brand-logo {
+    width: 40px;
+    height: 40px;
 }
 
 /* Navigation */

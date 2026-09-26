@@ -43,3 +43,375 @@
 .chart-container canvas {
     max-width: 100%;
 }
+
+/* ============================================================
+   DASHBOARD — Améliorations
+   ============================================================ */
+
+.section-heading {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 24px 0 12px;
+}
+
+.section-heading:first-child {
+    margin-top: 0;
+}
+
+/* Grille 4 colonnes pour les stats */
+.stats-grid-4 {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* Carte Bénéfice (Emerald plus foncé) */
+.stat-card.stat-emerald::before {
+    background: #047857;
+}
+
+.stat-card.stat-emerald .stat-icon {
+    background: #d1fae5;
+    color: #047857;
+}
+
+/* Grille pleine largeur */
+.grid-full {
+    grid-column: 1 / -1;
+}
+
+/* Raccourcis */
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s;
+}
+
+.quick-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: var(--primary-400);
+}
+
+.quick-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: var(--primary-50);
+    color: var(--primary-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.quick-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.quick-action strong {
+    display: block;
+    color: var(--color-text);
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.quick-action small {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+}
+
+/* Graphique pleine largeur */
+.chart-container {
+    position: relative;
+    height: 320px;
+    width: 100%;
+}
+
+.chart-container-pie {
+    height: 300px;
+}
+
+/* Mode sombre */
+[data-theme="dark"] .quick-action {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .quick-action:hover {
+    border-color: var(--primary-500);
+}
+
+[data-theme="dark"] .quick-icon {
+    background: #312e81;
+    color: #a5b4fc;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-grid-4 {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================================
+   HERO CARD
+   ============================================================ */
+
+.hero-section {
+    margin-bottom: 24px;
+}
+
+.hero-card {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    gap: 32px;
+    align-items: center;
+    padding: 32px 40px;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+    border-radius: 20px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+}
+
+.hero-value {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.hero-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+.hero-chart {
+    height: 100px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================================
+   STATS GRID 3 COLONNES
+   ============================================================ */
+
+.stats-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* ============================================================
+   CARTE CHART LARGE
+   ============================================================ */
+
+.card-chart-large .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.card-subtitle {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
+.chart-legend-custom {
+    display: flex;
+    gap: 16px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.chart-container.chart-large {
+    height: 360px;
+}
+
+/* ============================================================
+   MINI-KPIs
+   ============================================================ */
+
+.mini-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 24px 0;
+}
+
+.mini-kpi {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    transition: all 0.15s;
+}
+
+.mini-kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mini-kpi-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--primary-50);
+    color: var(--primary-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mini-kpi-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.mini-kpi-danger .mini-kpi-icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.mini-kpi > div {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.mini-kpi-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.mini-kpi-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+/* ============================================================
+   CARD LINK
+   ============================================================ */
+
+.card-link {
+    font-size: 0.85rem;
+    color: var(--primary-600);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.card-link:hover {
+    color: var(--primary-700);
+    text-decoration: underline;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .hero-card {
+        grid-template-columns: 1fr;
+        padding: 24px;
+    }
+
+    .hero-value {
+        font-size: 2rem;
+    }
+
+    .hero-chart {
+        height: 60px;
+    }
+
+    .card-chart-large .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

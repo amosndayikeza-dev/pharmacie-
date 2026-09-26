@@ -80,9 +80,16 @@
 
             <select id="filterStatut">
                 <option value="">Tous les statuts</option>
-                <option value="validee">Validée</option>
+                <option value="validee">Payée</option>
+                <option value="partielle">Partielle</option>
+                <option value="credit">Crédit</option>
                 <option value="annulee">Annulée</option>
                 <option value="avoir">Avoir</option>
+            </select>
+            <select id="filterPaiement">
+                <option value="">Tous les paiements</option>
+                <option value="paye">Payé intégralement</option>
+                <option value="credit">Avec crédit</option>
             </select>
 
             <button class="btn btn-secondary" id="resetFiltersBtn">
@@ -103,6 +110,7 @@
                             <th>Date / Heure</th>
                             <th class="text-right">Montant TTC</th>
                             <th>Statut</th>
+                            <th class="text-right">Reste dû</th>
                             <th class="text-right">Actions</th>
                         </tr>
                     </thead>

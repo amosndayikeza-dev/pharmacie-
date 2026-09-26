@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\RapportJournalierController;
 use App\Http\Controllers\Api\V1\LogController;
 use App\Http\Controllers\Api\V1\ExportController;
 use App\Http\Controllers\Api\V1\ParametreController;
+use App\Http\Controllers\Api\V1\CreditController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -473,6 +474,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::put('/',                [ParametreController::class, 'update'])
             ->middleware('role.api:Administrateur')
             ->name('update');
+    });
+
+    // ============================================================
+    // CRÉDITS CLIENTS
+    // ============================================================
+
+    Route::prefix('credits')->name('credits.')->group(function () {
+        Route::get('/',                  [CreditController::class, 'index'])->name('index');
+        Route::get('/stats',             [CreditController::class, 'stats'])->name('stats');
+        Route::get('/client/{clientId}', [CreditController::class, 'parClient'])
+            ->whereNumber('clientId')
+            ->name('par.client');
+        Route::post('/{paiementId}/regler', [CreditController::class, 'regler'])
+            ->whereNumber('paiementId')
+            ->name('regler');
     });
 
     });

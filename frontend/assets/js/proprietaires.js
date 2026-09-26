@@ -141,8 +141,12 @@ function renderTable() {
                     ${p.ville ? escapeHtml(p.ville) : '<span class="text-muted">—</span>'}
                 </td>
                 <td>
-                    ${p.nb_animaux !== undefined
-                        ? `<span class="badge badge-neutral">${p.nb_animaux}</span>`
+                    ${p.animaux && p.animaux.length
+                        ? p.animaux.map(a =>
+                            `<span class="badge badge-info" style="margin-right: 4px;">
+                                ${escapeHtml(a.nom || 'Animal')}${a.espece ? ' (' + escapeHtml(a.espece) + ')' : ''}
+                            </span>`
+                        ).join('')
                         : '<span class="text-muted">—</span>'}
                 </td>
                 <td class="text-right">

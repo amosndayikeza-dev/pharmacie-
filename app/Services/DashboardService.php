@@ -8,6 +8,7 @@ use App\Models\Medicament;
 use App\Models\Vente;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\ReglementCredit;
 
 /**
  * Service Dashboard — Calcule toutes les statistiques du tableau de bord.
@@ -24,39 +25,137 @@ class DashboardService
         $aujourdhui = Carbon::today();
         $debutMois  = Carbon::now()->startOfMonth();
 
-        // CA du jour
-        $ventesJour = Vente::whereDate('date_heure', $aujourdhui)
-            ->where('statut', 'validee')
-            ->selectRaw('COUNT(*) as nb_tickets, COALESCE(SUM(montant_total_ttc), 0) as total_ttc')
-            ->first();
-
-        // CA du mois
-        $caMois = Vente::where('date_heure', '>=', $debutMois)
+        // ─────────────────────────────────────────────────────────
+        // CA FACTURÉ (toutes ventes, payées ou non)
+        // ─────────────────────────────────────────────────────────
+        $caFactureJour = Vente::whereDate('date_heure', $aujourdhui)
             ->where('statut', 'validee')
             ->sum('montant_total_ttc');
 
-        // Nombre d'animaux vivants
-        $nbAnimaux = Animal::where('vivant', true)->count();
+        $caFactureMois = Vente::where('date_heure', '>=', $debutMois)
+            ->where('statut', 'validee')
+            ->sum('montant_total_ttc');
 
-        // Nombre de médicaments actifs
-        $nbMedicaments = Medicament::where('actif', true)->count();
+        // ─────────────────────────────────────────────────────────
+        // CA ENCAISSÉ (espèces + règlements de crédit)
+        // ─────────────────────────────────────────────────────────
+        $caEncaisseJour = (float) \App\Models\Paiement::where('type', 'especes')
+            ->whereDate('created_at', $aujourdhui)
+            ->sum('montant')
+            + (float) \App\Models\ReglementCredit::whereDate('date_heure', $aujourdhui)
+                ->sum('montant');
 
-        // Nombre de lots périmés encore en stock
-        $nbLotsPerimes = Lot::perimes()->count();
+        $caEncaisseMois = (float) \App\Models\Paiement::where('type', 'especes')
+            ->where('created_at', '>=', $debutMois)
+            ->sum('montant')
+            + (float) \App\Models\ReglementCredit::where('date_heure', '>=', $debutMois)
+                ->sum('montant');
 
-        // Nombre de lots expirant bientôt
-        $nbLotsAlerte = Lot::expirantDans(30)->count();
+        // ─────────────────────────────────────────────────────────
+        // CRÉANCES (dettes clients actuelles)
+        // ─────────────────────────────────────────────────────────
+        $totalCredits = (float) \App\Models\Paiement::where('type', 'credit')->sum('montant');
+        $totalRegle   = (float) \App\Models\ReglementCredit::sum('montant');
+        $creances     = $totalCredits - $totalRegle;
+
+        // Nombre de tickets du jour
+        $ticketsJour = Vente::whereDate('date_heure', $aujourdhui)
+            ->where('statut', 'validee')
+            ->count();
+
+        // Bénéfice (marge brute) du mois
+        $beneficeMois = (float) \App\Models\LigneVente::whereHas('vente', fn ($q) =>
+            $q->where('date_heure', '>=', $debutMois)->where('statut', 'validee')
+        )->sum('marge_brute');
 
         return [
-            'ca_jour'           => (float) ($ventesJour->total_ttc ?? 0),
-            'tickets_jour'      => (int)   ($ventesJour->nb_tickets ?? 0),
-            'ca_mois'           => (float) $caMois,
-            'nb_animaux'        => $nbAnimaux,
-            'nb_medicaments'    => $nbMedicaments,
-            'nb_lots_perimes'   => $nbLotsPerimes,
-            'nb_lots_alerte'    => $nbLotsAlerte,
+            'ca_facture_jour'   => (float) $caFactureJour,
+            'ca_facture_mois'   => (float) $caFactureMois,
+            'ca_encaisse_jour'  => $caEncaisseJour,
+            'ca_encaisse_mois'  => $caEncaisseMois,
+            'creances'          => $creances,
+            'benefice_mois'     => $beneficeMois,
+            'tickets_jour'      => $ticketsJour,
+            'nb_animaux'        => Animal::where('vivant', true)->count(),
+            'nb_medicaments'    => Medicament::where('actif', true)->count(),
+            'nb_lots'           => Lot::where('quantite_restante', '>', 0)->count(),   // ⚠️ AJOUT
+            'nb_lots_perimes'   => Lot::perimes()->count(),
+            'nb_lots_alerte'    => Lot::expirantDans(30)->count(),
         ];
     }
+
+    /**
+ * Évolution financière sur les 7 derniers jours.
+ *
+ * Retourne pour chaque jour :
+ *   - Le CA facturé (toutes les ventes)
+ *   - Le CA encaissé (paiements espèces + règlements de crédit)
+ *
+ * Utilisé pour le graphique comparatif.
+ */
+public function getEvolutionFinance(): array
+{
+    $data = [];
+
+    for ($i = 6; $i >= 0; $i--) {
+        $date = \Carbon\Carbon::today()->subDays($i);
+
+        // CA facturé du jour
+        $facture = (float) Vente::whereDate('date_heure', $date)
+            ->where('statut', 'validee')
+            ->sum('montant_total_ttc');
+
+        // CA encaissé du jour (espèces + règlements crédit)
+        $encaisseEspeces = (float) \App\Models\Paiement::where('type', 'especes')
+            ->whereDate('created_at', $date)
+            ->sum('montant');
+
+        $encaisseReglements = (float) \App\Models\ReglementCredit::whereDate('date_heure', $date)
+            ->sum('montant');
+
+        $encaisse = $encaisseEspeces + $encaisseReglements;
+
+        $data[] = [
+            'date'      => $date->toDateString(),
+            'label'     => $date->locale('fr')->isoFormat('ddd D'),
+            'facture'   => $facture,
+            'encaisse'  => $encaisse,
+        ];
+    }
+
+    return $data;
+}
+
+/**
+ * Répartition paiements (espèces vs crédit) sur le mois en cours.
+ */
+public function getRepartitionPaiementsMois(): array
+{
+    $debutMois = \Carbon\Carbon::now()->startOfMonth();
+
+    $especes = (float) \App\Models\Paiement::where('type', 'especes')
+        ->where('created_at', '>=', $debutMois)
+        ->sum('montant');
+
+    $credits = (float) \App\Models\Paiement::where('type', 'credit')
+        ->where('created_at', '>=', $debutMois)
+        ->sum('montant');
+
+    $reglements = (float) \App\Models\ReglementCredit::where('date_heure', '>=', $debutMois)
+        ->sum('montant');
+
+    // Espèces = paiements espèces + règlements encaissés
+    $especesTotal = $especes + $reglements;
+
+    // Crédits = montant initial - réglé
+    $creditsRestants = max(0, $credits - $reglements);
+
+    return [
+        'especes'  => $especesTotal,
+        'credits'  => $creditsRestants,
+        'total'    => $especesTotal + $creditsRestants,
+    ];
+}
 
     /**
      * Médicaments sous le seuil d'alerte.
@@ -154,30 +253,62 @@ class DashboardService
     /**
      * 5 dernières ventes.
      */
-    public function getVentesRecentes(int $limit = 5): array
-    {
-        return Vente::with([
-                'proprietaire:id,nom,prenom,raison_sociale,type',
-                'animal:id,nom',
-                'utilisateur:id,nom,prenom',
-            ])
-            ->where('statut', 'validee')
-            ->orderByDesc('date_heure')
-            ->limit($limit)
-            ->get()
-            ->map(fn ($vente) => [
-                'id'              => $vente->id,
-                'numero_ticket'   => $vente->numero_ticket,
-                'date_heure'      => $vente->date_heure?->toISOString(),
-                'montant_ttc'     => (float) $vente->montant_total_ttc,
-                'proprietaire'    => $vente->proprietaire?->nomComplet() ?? 'Client anonyme',
-                'animal'          => $vente->animal?->nom,
-                'vendeur'         => $vente->utilisateur
-                    ? "{$vente->utilisateur->prenom} {$vente->utilisateur->nom}"
+    /**
+ * Récupère les 5 dernières ventes (tous statuts sauf annulée/avoir).
+ *
+ * ⚠️ On inclut 'partielle' et 'credit' pour voir les ventes à crédit récentes.
+ */
+public function getVentesRecentes(int $limit = 5): array
+{
+    return Vente::with([
+            'proprietaire:id,nom,prenom,raison_sociale,type',
+            'animal:id,nom,espece_id',
+            'animal.espece:id,nom',              // ← nom de l'espèce
+            'utilisateur:id,nom,prenom',
+        ])
+        ->whereIn('statut', ['validee', 'partielle', 'credit'])   // ⚠️ tous les statuts actifs
+        ->orderByDesc('date_heure')
+        ->limit($limit)
+        ->get()
+        ->map(function (Vente $vente) {
+            // Nom du client (particulier ou structure)
+            $proprietaire = $vente->proprietaire;
+            $clientNom = 'Client anonyme';
+
+            if ($proprietaire) {
+                $clientNom = $proprietaire->type === 'particulier'
+                    ? trim("{$proprietaire->prenom} {$proprietaire->nom}")
+                    : ($proprietaire->raison_sociale ?? $proprietaire->nom);
+            }
+
+            // Nom de l'animal (avec espèce si dispo)
+            $animal = $vente->animal;
+            $animalNom = null;
+            if ($animal) {
+                $animalNom = $animal->nom
+                    ? $animal->nom
+                    : 'Animal #' . $animal->id;
+
+                if ($animal->espece?->nom) {
+                    $animalNom .= ' (' . $animal->espece->nom . ')';
+                }
+            }
+
+            return [
+                'id'            => $vente->id,
+                'numero_ticket' => $vente->numero_ticket,
+                'date_heure'    => $vente->date_heure?->toISOString(),
+                'montant_ttc'   => (float) $vente->montant_total_ttc,
+                'proprietaire'  => $clientNom,
+                'animal'        => $animalNom,
+                'statut'        => $vente->statut,
+                'vendeur'       => $vente->utilisateur
+                    ? trim("{$vente->utilisateur->prenom} {$vente->utilisateur->nom}")
                     : '—',
-            ])
-            ->toArray();
-    }
+            ];
+        })
+        ->toArray();
+}
 
     /**
      * Top 5 médicaments vendus ce mois.
@@ -239,15 +370,17 @@ class DashboardService
     /**
      * Tout le dashboard en un seul appel.
      */
-    public function getAll(): array
-    {
-        return [
-            'stats'              => $this->getStats(),
-            'alertes_stock'      => $this->getAlertesStock(),
-            'alertes_peremption' => $this->getAlertesPeremption(),
-            'ventes_recentes'    => $this->getVentesRecentes(),
-            'top_medicaments'    => $this->getTopMedicaments(),
-            'ventes_semaine'     => $this->getVentesSemaine(),
-        ];
-    }
+   public function getAll(): array
+{
+    return [
+        'stats'                => $this->getStats(),
+        'evolution_finance'    => $this->getEvolutionFinance(),      
+        'repartition_mois'     => $this->getRepartitionPaiementsMois(),
+        'alertes_stock'        => $this->getAlertesStock(),
+        'alertes_peremption'   => $this->getAlertesPeremption(),
+        'ventes_recentes'      => $this->getVentesRecentes(),
+        'top_medicaments'      => $this->getTopMedicaments(),
+        'ventes_semaine'       => $this->getVentesSemaine(),
+    ];
+}
 }

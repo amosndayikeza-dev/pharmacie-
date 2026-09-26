@@ -457,3 +457,51 @@
         grid-template-columns: 1fr 100px;
     }
 }
+
+/* ============================================================
+   RÉSUMÉ PAIEMENT (Espèces / Crédit)
+   ============================================================ */
+
+.paiement-resume {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+}
+
+.paiement-resume-ligne {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 0.95rem;
+}
+
+.paiement-resume-ligne:first-child {
+    border-bottom: 1px dashed #e5e7eb;
+    padding-bottom: 12px;
+}
+
+.paiement-resume-ligne.reste {
+    padding-top: 12px;
+    font-weight: 600;
+}
+
+.paiement-resume-ligne strong {
+    font-size: 1.1rem;
+}
+
+.paiement-resume-ligne.reste strong {
+    font-size: 1.25rem;
+    color: #f59e0b;
+}
+
+/* Mode sombre */
+[data-theme="dark"] .paiement-resume {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .paiement-resume-ligne:first-child {
+    border-bottom-color: #334155;
+}

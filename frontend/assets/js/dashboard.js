@@ -1,24 +1,30 @@
 /**
- * Logique du tableau de bord.
+ * ============================================================
+ * DASHBOARD — Tableau de bord
+ * ============================================================
  *
- * ⚠️ Le layout (sidebar, header, footer) est géré par components.js + layout.js
- * Ce fichier ne contient QUE la logique du contenu du dashboard.
- *
- * ROBUSTESSE :
- *   - Chaque render est isolé dans un try/catch → une erreur n'empêche pas le reste
- *   - Chart.js protégé (si absent, les graphiques sont ignorés, mais la page s'affiche)
- *   - finally garantit que le loader est toujours masqué
+ * Affiche :
+ *  - Stats financières (CA facturé, CA encaissé, créances, bénéfice)
+ *  - Graphique évolution 7 jours (facturé vs encaissé)
+ *  - Répartition paiements (espèces vs crédit)
+ *  - Top médicaments
+ *  - État du stock
+ *  - Alertes stock + péremption
+ *  - Ventes récentes
  */
+
+Guard.requireAuth();
 
 // ============================================================
 // INSTANCES CHART.JS
 // ============================================================
 
 const Charts = {
-    ventesSemaine:  null,
-    paiements:      null,
-    topMedicaments: null,
-    etatStock:      null,
+    hello:                null,
+    finance:              null,
+    repartitionPaiements: null,
+    topMedicaments:       null,
+    etatStock:            null,
 };
 
 // ============================================================
@@ -26,17 +32,10 @@ const Charts = {
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Date du jour
-    renderDate();
-
-    // 2. Charger le dashboard
     await loadDashboard();
 
-    // 3. Bouton rafraîchir
     const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', loadDashboard);
-    }
+    if (refreshBtn) refreshBtn.addEventListener('click', loadDashboard);
 });
 
 // ============================================================
@@ -56,42 +55,25 @@ async function loadDashboard() {
         const response = await Api.get('/dashboard');
         const data = response.data || {};
 
-        // ⚠️ Chaque render est isolé : une erreur n'empêche pas les autres
-        try { renderStats(data.stats || {}); } catch (e) { console.error('[renderStats]', e); }
-        try { renderAlertesStock(data.alertes_stock || []); } catch (e) { console.error('[renderAlertesStock]', e); }
-        try { renderAlertesPeremption(data.alertes_peremption || {}); } catch (e) { console.error('[renderAlertesPeremption]', e); }
-        try { renderVentesRecentes(data.ventes_recentes || []); } catch (e) { console.error('[renderVentesRecentes]', e); }
-        try { renderTopMedicaments(data.top_medicaments || []); } catch (e) { console.error('[renderTopMedicaments]', e); }
+        // Renders individuels protégés
+        try { renderStats(data.stats || {}); } catch (e) { console.error('[stats]', e); }
+        try { renderAlertesStock(data.alertes_stock || []); } catch (e) { console.error('[alertes stock]', e); }
+        try { renderAlertesPeremption(data.alertes_peremption || {}); } catch (e) { console.error('[alertes peremption]', e); }
+        try { renderVentesRecentes(data.ventes_recentes || []); } catch (e) { console.error('[ventes recentes]', e); }
 
-        // ⚠️ Graphiques : uniquement si Chart.js est chargé
+        // Graphiques (protégés)
         if (typeof Chart !== 'undefined') {
-            try { setupChartDefaults(); } catch (e) { console.error('[chart defaults]', e); }
-            try { renderChartVentesSemaine(data.ventes_semaine || []); } catch (e) { console.error('[chart ventes]', e); }
+            setupChartDefaults();
+            try { renderChartHero(data.evolution_finance || []); } catch (e) { console.error('[chart hero]', e); }
+            try { renderChartFinance(data.evolution_finance || []); } catch (e) { console.error('[chart finance]', e); }
             try { renderChartTopMedicaments(data.top_medicaments || []); } catch (e) { console.error('[chart top]', e); }
             try { renderChartEtatStock(data.stats || {}); } catch (e) { console.error('[chart stock]', e); }
-            try { renderChartPaiements(data.stats || {}); } catch (e) { console.error('[chart paiements]', e); }
-        } else {
-            console.warn('[Dashboard] Chart.js non chargé — graphiques ignorés');
-        }
-
-        // Badge alertes dans la sidebar
-        const nbAlertes =
-            (data.alertes_stock?.length || 0) +
-            (data.alertes_peremption?.perimes?.length || 0) +
-            (data.alertes_peremption?.critiques?.length || 0);
-
-        const badge = document.getElementById('badgeAlertes');
-        if (badge && nbAlertes > 0) {
-            badge.textContent = nbAlertes;
-            badge.hidden = false;
         }
 
         if (content) content.hidden = false;
-
     } catch (error) {
-        console.error('[Dashboard] Erreur globale:', error);
+        console.error('[Dashboard] Erreur:', error);
 
-        // Afficher un message d'erreur DANS le contenu (au lieu de rester sur le loader)
         if (content) {
             content.hidden = false;
             content.innerHTML = `
@@ -103,37 +85,20 @@ async function loadDashboard() {
                         <p style="color: var(--color-text-muted); margin-top: 8px;">
                             ${escapeHtml(error.message || 'Erreur inconnue')}
                         </p>
-                        <p style="color: var(--color-text-soft); margin-top: 16px; font-size: 0.85rem;">
-                            Vérifie la console (F12) pour plus de détails.
-                        </p>
                     </div>
                 </div>
             `;
         }
-
         try { Toast.error('Erreur : ' + (error.message || 'inconnue')); } catch (e) {}
-
     } finally {
-        // ⚠️ TOUJOURS masquer le loader, même en cas d'erreur
-        if (loader) loader.hidden = true;
-        if (btn)    btn.disabled = false;
+        if (loader) { loader.hidden = true; loader.style.display = 'none'; }
+        if (btn) btn.disabled = false;
     }
 }
 
 // ============================================================
-// RENDERING — INFOS GÉNÉRALES
+// RENDU — CARTES STATS
 // ============================================================
-
-function renderDate() {
-    const date = new Date().toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        year:    'numeric',
-        month:   'long',
-        day:     'numeric',
-    });
-    const el = document.getElementById('currentDate');
-    if (el) el.textContent = date.charAt(0).toUpperCase() + date.slice(1);
-}
 
 function renderStats(stats) {
     const setText = (id, value) => {
@@ -141,13 +106,39 @@ function renderStats(stats) {
         if (el) el.textContent = value;
     };
 
-    setText('statCaJour',      formatMoney(stats.ca_jour || 0));
-    setText('statTicketsJour', `${stats.tickets_jour || 0} ticket${(stats.tickets_jour || 0) > 1 ? 's' : ''}`);
-    setText('statCaMois',      formatMoney(stats.ca_mois || 0));
+    // ═══ HERO ═══
+    const caEncaisseMois = parseFloat(stats.ca_encaisse_mois || 0);
+    const caFactureMois  = parseFloat(stats.ca_facture_mois || 0);
+    const pct = caFactureMois > 0 ? (caEncaisseMois / caFactureMois) * 100 : 0;
+
+    setText('heroCaEncaisse', formatMoney(caEncaisseMois));
+    setText('heroSubtitle', `sur ${formatMoney(caFactureMois)} facturés`);
+    setText('heroBadge', `${pct.toFixed(0)}% encaissé`);
+
+    // ═══ KPIs SECONDAIRES ═══
+    const caFactureJour = parseFloat(stats.ca_facture_jour || 0);
+    const ticketsJour   = parseInt(stats.tickets_jour || 0);
+
+    setText('statCaFactureJour', formatMoney(caFactureJour));
+    setText('statTicketsJour', `${ticketsJour} ticket${ticketsJour > 1 ? 's' : ''}`);
+
+    setText('statCreances', formatMoney(stats.creances || 0));
+
+    const benefice = parseFloat(stats.benefice_mois || 0);
+    const margePct = caFactureMois > 0 ? (benefice / caFactureMois) * 100 : 0;
+
+    setText('statBenefice', formatMoney(benefice));
+    setText('statPctMarge', `Marge : ${margePct.toFixed(1)}%`);
+
+    // ═══ MINI-KPIs ═══
     setText('statAnimaux',     stats.nb_animaux || 0);
     setText('statMedicaments', stats.nb_medicaments || 0);
+    setText('statLots',        stats.nb_lots || 0);
 
-    // Nom dans le titre
+    const lotsEnAlerte = (stats.nb_lots_perimes || 0) + (stats.nb_lots_alerte || 0);
+    setText('statLotsAlerte', lotsEnAlerte);
+
+    // ═══ NOM UTILISATEUR ═══
     const user = Storage.getUser();
     if (user) {
         const prenom = user.prenom || user.nom_complet?.split(' ')[0] || '';
@@ -155,8 +146,17 @@ function renderStats(stats) {
     }
 }
 
+/**
+ * Retourne un texte du type "67% encaissé".
+ */
+function pctEncaisse(encaisse, facture) {
+    if (facture <= 0) return 'Aucune vente';
+    const pct = (encaisse / facture) * 100;
+    return `${pct.toFixed(0)}% encaissé`;
+}
+
 // ============================================================
-// RENDERING — ALERTES
+// RENDU — ALERTES
 // ============================================================
 
 function renderAlertesStock(alertes) {
@@ -199,15 +199,11 @@ function renderAlertesPeremption(data) {
 
     if (data.perimes?.length) {
         html += `<h4 class="alert-group-title danger">Périmés (${data.perimes.length})</h4>`;
-        html += data.perimes.map(l => renderLotAlert(l, 'danger')).join('');
+        html += data.perimes.slice(0, 5).map(l => renderLotAlert(l, 'danger')).join('');
     }
     if (data.critiques?.length) {
         html += `<h4 class="alert-group-title warning">Expire dans 7 jours (${data.critiques.length})</h4>`;
-        html += data.critiques.map(l => renderLotAlert(l, 'warning')).join('');
-    }
-    if (data.attention?.length) {
-        html += `<h4 class="alert-group-title info">Expire dans 30 jours (${data.attention.length})</h4>`;
-        html += data.attention.map(l => renderLotAlert(l, 'info')).join('');
+        html += data.critiques.slice(0, 5).map(l => renderLotAlert(l, 'warning')).join('');
     }
 
     container.innerHTML = html;
@@ -229,117 +225,160 @@ function renderLotAlert(lot, niveau) {
 }
 
 // ============================================================
-// RENDERING — TABLEAUX
+// RENDU — VENTES RÉCENTES
 // ============================================================
 
+/**
+ * Affiche les 5 dernières ventes dans le tableau du dashboard.
+ *
+ * Colonnes : Ticket · Client · Animal · Montant · Heure
+ */
 function renderVentesRecentes(ventes) {
     const tbody = document.querySelector('#ventesRecentes tbody');
     if (!tbody) return;
 
+    // Cas vide
     if (!ventes || ventes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty">Aucune vente récente</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty">Aucune vente récente</td>
+            </tr>
+        `;
         return;
     }
 
-    tbody.innerHTML = ventes.map(v => `
-        <tr>
-            <td><strong>${escapeHtml(v.numero_ticket)}</strong></td>
-            <td>${escapeHtml(v.proprietaire)}</td>
-            <td class="text-right">${formatMoney(v.montant_ttc)}</td>
-            <td>${formatTime(v.date_heure)}</td>
-        </tr>
-    `).join('');
-}
+    // Rendu des lignes
+    tbody.innerHTML = ventes.map(v => {
+        // Badge statut
+        const statutConfig = {
+            validee:   { label: 'Payée',     class: 'badge-success' },
+            partielle: { label: 'Partielle', class: 'badge-warning' },
+            credit:    { label: 'Crédit',    class: 'badge-danger'  },
+            annulee:   { label: 'Annulée',   class: 'badge-neutral' },
+            avoir:     { label: 'Avoir',     class: 'badge-info'    },
+        };
+        const statut = statutConfig[v.statut] || { label: v.statut, class: 'badge-neutral' };
 
-function renderTopMedicaments(top) {
-    const tbody = document.querySelector('#topMedicaments tbody');
-    if (!tbody) return;
-
-    if (!top || top.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="empty">Aucune vente ce mois</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = top.map(m => `
-        <tr>
-            <td>
-                <strong>${escapeHtml(m.nom)}</strong><br>
-                <small class="text-muted">${escapeHtml(m.code_cip)}</small>
-            </td>
-            <td class="text-right">${m.quantite_vendue}</td>
-            <td class="text-right">${formatMoney(m.ca_total)}</td>
-        </tr>
-    `).join('');
+        return `
+            <tr>
+                <td>
+                    <strong>${escapeHtml(v.numero_ticket)}</strong>
+                    <br><span class="badge ${statut.class}" style="font-size: 0.65rem;">${statut.label}</span>
+                </td>
+                <td>${escapeHtml(v.proprietaire)}</td>
+                <td>
+                    ${v.animal
+                        ? `<span class="badge badge-info">🐾 ${escapeHtml(v.animal)}</span>`
+                        : '<span class="text-muted">—</span>'}
+                </td>
+                <td class="text-right">${formatMoney(v.montant_ttc)}</td>
+                <td>${formatTime(v.date_heure)}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // ============================================================
-// GRAPHIQUES (Chart.js)
+// GRAPHIQUES
 // ============================================================
 
-/**
- * Configuration commune Chart.js.
- * ⚠️ Appelée uniquement si Chart est chargé.
- */
 function setupChartDefaults() {
     if (typeof Chart === 'undefined') return;
-
     Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
     Chart.defaults.font.size = 12;
     Chart.defaults.color = '#6b7280';
 }
 
 /**
- * Graphique 1 — CA des 7 derniers jours (courbe).
+ * Graphique 1 — CA facturé vs encaissé (barres groupées).
  */
-function renderChartVentesSemaine(ventesSemaine) {
+/**
+ * Graphique 1 — CA facturé vs encaissé (courbes).
+ */
+function renderChartFinance(evolution) {
     if (typeof Chart === 'undefined') return;
 
-    const canvas = document.getElementById('chartVentesSemaine');
+    const canvas = document.getElementById('chartFinance');
     if (!canvas) return;
 
-    if (Charts.ventesSemaine) Charts.ventesSemaine.destroy();
+    if (Charts.finance) Charts.finance.destroy();
 
-    const labels = ventesSemaine.map(v => v.label || '—');
-    const values = ventesSemaine.map(v => v.ca || 0);
+    const labels    = evolution.map(e => e.label || '—');
+    const factures  = evolution.map(e => e.facture || 0);
+    const encaisses = evolution.map(e => e.encaisse || 0);
 
     const ctx = canvas.getContext('2d');
 
-    // Dégradé vert
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(5, 150, 105, 0.3)');
-    gradient.addColorStop(1, 'rgba(5, 150, 105, 0.02)');
+    // Dégradé indigo pour le facturé
+    const gradientFacture = ctx.createLinearGradient(0, 0, 0, 320);
+    gradientFacture.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
+    gradientFacture.addColorStop(1, 'rgba(99, 102, 241, 0.02)');
 
-    Charts.ventesSemaine = new Chart(ctx, {
+    // Dégradé émeraude pour l'encaissé
+    const gradientEncaisse = ctx.createLinearGradient(0, 0, 0, 320);
+    gradientEncaisse.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+    gradientEncaisse.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+
+    Charts.finance = new Chart(ctx, {
         type: 'line',
         data: {
             labels,
-            datasets: [{
-                label: 'CA TTC (BIF)',
-                data: values,
-                borderColor: '#059669',
-                backgroundColor: gradient,
-                borderWidth: 2.5,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#059669',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-            }],
+            datasets: [
+                {
+                    label: 'CA facturé',
+                    data: factures,
+                    borderColor: '#6366f1',
+                    backgroundColor: gradientFacture,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                },
+                {
+                    label: 'CA encaissé',
+                    data: encaisses,
+                    borderColor: '#10b981',
+                    backgroundColor: gradientEncaisse,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                },
+            ],
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    position: 'top',
+                    align: 'center',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 20,
+                        font: { size: 13, weight: '600' },
+                    },
+                },
                 tooltip: {
                     backgroundColor: '#1f2937',
-                    padding: 12,
+                    padding: 14,
                     titleFont: { size: 13, weight: '600' },
                     bodyFont: { size: 12 },
                     callbacks: {
-                        label: (context) => formatMoney(context.parsed.y),
+                        label: (ctx) => ` ${ctx.dataset.label} : ${formatMoney(ctx.parsed.y)}`,
                     },
                 },
             },
@@ -347,13 +386,13 @@ function renderChartVentesSemaine(ventesSemaine) {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: (value) => {
-                            if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
-                            if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
-                            return value;
+                        callback: (v) => {
+                            if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+                            if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+                            return v;
                         },
                     },
-                    grid: { color: '#f3f4f6' },
+                    grid: { color: '#f3f4f6', drawBorder: false },
                 },
                 x: {
                     grid: { display: false },
@@ -363,10 +402,12 @@ function renderChartVentesSemaine(ventesSemaine) {
     });
 }
 
+
+
 /**
- * Graphique 2 — Top 5 médicaments (barres horizontales).
+ * Graphique 3 — Top 5 médicaments.
  */
-function renderChartTopMedicaments(topMedicaments) {
+function renderChartTopMedicaments(top) {
     if (typeof Chart === 'undefined') return;
 
     const canvas = document.getElementById('chartTopMedicaments');
@@ -374,33 +415,22 @@ function renderChartTopMedicaments(topMedicaments) {
 
     if (Charts.topMedicaments) Charts.topMedicaments.destroy();
 
-    const top5 = (topMedicaments || []).slice(0, 5);
+    const top5 = (top || []).slice(0, 5);
 
-    // Si aucune donnée → message
-    if (top5.length === 0) {
+    if (!top5.length) {
         canvas.parentElement.innerHTML = '<p class="empty">Aucune vente ce mois</p>';
         return;
     }
 
-    const labels = top5.map(m => m.nom || '—');
-    const values = top5.map(m => m.quantite_vendue || 0);
-
     Charts.topMedicaments = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels,
+            labels: top5.map(m => m.nom || '—'),
             datasets: [{
                 label: 'Quantité vendue',
-                data: values,
-                backgroundColor: [
-                    '#059669',
-                    '#10b981',
-                    '#34d399',
-                    '#6ee7b7',
-                    '#a7f3d0',
-                ],
+                data: top5.map(m => m.quantite_vendue || 0),
+                backgroundColor: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'],
                 borderRadius: 6,
-                borderSkipped: false,
             }],
         },
         options: {
@@ -411,102 +441,19 @@ function renderChartTopMedicaments(topMedicaments) {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: '#1f2937',
-                    padding: 12,
-                    callbacks: {
-                        label: (context) => `${context.parsed.x} unités vendues`,
-                    },
+                    callbacks: { label: (ctx) => `${ctx.parsed.x} unités` },
                 },
             },
             scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: { precision: 0 },
-                    grid: { color: '#f3f4f6' },
-                },
-                y: {
-                    grid: { display: false },
-                    ticks: {
-                        callback: function (value) {
-                            const label = this.getLabelForValue(value);
-                            return label.length > 20 ? label.slice(0, 18) + '…' : label;
-                        },
-                    },
-                },
+                x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f3f4f6' } },
+                y: { grid: { display: false } },
             },
         },
     });
 }
 
 /**
- * Graphique 3 — Répartition des paiements (doughnut).
- */
-function renderChartPaiements(stats) {
-    if (typeof Chart === 'undefined') return;
-
-    const canvas = document.getElementById('chartPaiements');
-    if (!canvas) return;
-
-    if (Charts.paiements) Charts.paiements.destroy();
-
-    const especes = parseFloat(stats.total_especes || 0);
-    const carte   = parseFloat(stats.total_carte || 0);
-    const mobile  = parseFloat(stats.total_mobile_money || 0);
-    const credit  = parseFloat(stats.total_credit || 0);
-
-    const total = especes + carte + mobile + credit;
-
-    if (total === 0) {
-        canvas.parentElement.innerHTML = '<p class="empty">Aucun paiement enregistré</p>';
-        return;
-    }
-
-    Charts.paiements = new Chart(canvas.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Espèces', 'Carte', 'Mobile Money', 'Crédit'],
-            datasets: [{
-                data: [especes, carte, mobile, credit],
-                backgroundColor: [
-                    '#059669',
-                    '#3b82f6',
-                    '#8b5cf6',
-                    '#f59e0b',
-                ],
-                borderWidth: 2,
-                borderColor: '#fff',
-            }],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '65%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 16,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                    },
-                },
-                tooltip: {
-                    backgroundColor: '#1f2937',
-                    padding: 12,
-                    callbacks: {
-                        label: (context) => {
-                            const value = context.parsed;
-                            const pct = ((value / total) * 100).toFixed(1);
-                            return `${context.label} : ${formatMoney(value)} (${pct}%)`;
-                        },
-                    },
-                },
-            },
-        },
-    });
-}
-
-/**
- * Graphique 4 — État du stock (doughnut).
+ * Graphique 4 — État du stock.
  */
 function renderChartEtatStock(stats) {
     if (typeof Chart === 'undefined') return;
@@ -531,11 +478,7 @@ function renderChartEtatStock(stats) {
             labels: ['Médicaments actifs', 'Lots périmés', 'Lots en alerte'],
             datasets: [{
                 data: [actifs, perimes, alerte],
-                backgroundColor: [
-                    '#10b981',
-                    '#dc2626',
-                    '#f59e0b',
-                ],
+                backgroundColor: ['#10b981', '#dc2626', '#f59e0b'],
                 borderWidth: 2,
                 borderColor: '#fff',
             }],
@@ -547,16 +490,9 @@ function renderChartEtatStock(stats) {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: {
-                        padding: 16,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                    },
+                    labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 },
                 },
-                tooltip: {
-                    backgroundColor: '#1f2937',
-                    padding: 12,
-                },
+                tooltip: { backgroundColor: '#1f2937', padding: 12 },
             },
         },
     });
@@ -568,17 +504,15 @@ function renderChartEtatStock(stats) {
 
 function formatMoney(value) {
     return new Intl.NumberFormat('fr-BI', {
-        style: 'currency',
-        currency: 'BIF',
-        minimumFractionDigits: 0,
+        style: 'currency', currency: 'BIF',
+        minimumFractionDigits: 0, maximumFractionDigits: 0,
     }).format(value || 0);
 }
 
 function formatTime(isoString) {
     if (!isoString) return '—';
     return new Date(isoString).toLocaleTimeString('fr-FR', {
-        hour:   '2-digit',
-        minute: '2-digit',
+        hour: '2-digit', minute: '2-digit',
     });
 }
 
@@ -587,4 +521,53 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Mini-graphe dans la hero card (sparkline).
+ * Montre l'évolution du CA facturé sur 7 jours.
+ */
+function renderChartHero(evolution) {
+    if (typeof Chart === 'undefined') return;
+
+    const canvas = document.getElementById('chartHero');
+    if (!canvas) return;
+
+    if (Charts.hero) Charts.hero.destroy();
+
+    const labels = evolution.map(e => e.label || '');
+    const data   = evolution.map(e => e.facture || 0);
+
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 80);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+    Charts.hero = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                borderColor: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: gradient,
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: '#fff',
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+                x: { display: false },
+                y: { display: false },
+            },
+            elements: { line: { borderCapStyle: 'round' } },
+        },
+    });
 }

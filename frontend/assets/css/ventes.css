@@ -83,3 +83,33 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ============================================================
+   BADGES DE STATUT VENTES
+   ============================================================ */
+
+.badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-neutral {
+    background: var(--color-bg-dark);
+    color: var(--color-text-muted);
+}
+
+/* Colonne Reste dû */
+.data-table td .badge-success {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+}

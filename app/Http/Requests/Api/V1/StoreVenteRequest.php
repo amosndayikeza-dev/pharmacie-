@@ -27,6 +27,7 @@ class StoreVenteRequest extends FormRequest
             'animal_id'       => ['nullable', 'integer', 'exists:animaux,id'],
             'ordonnance_id'   => ['nullable', 'integer', 'exists:ordonnances,id'],
             'montant_remise'  => ['nullable', 'numeric', 'min:0'],
+            'montant_paye'    => ['nullable', 'numeric', 'min:0'],
 
             // Lignes : médicaments + quantités
             'lignes'                    => ['required', 'array', 'min:1'],

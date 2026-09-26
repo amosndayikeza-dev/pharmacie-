@@ -30,7 +30,7 @@ class VenteController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Vente::query()
-            ->with(['proprietaire', 'utilisateur', 'animal'])
+            ->with(['proprietaire','animal','utilisateur','ordonnance','paiements.reglements',])
             ->when($request->filled('proprietaire_id'), fn ($q) => $q->where('proprietaire_id', $request->proprietaire_id))
             ->when($request->filled('utilisateur_id'), fn ($q) => $q->where('utilisateur_id', $request->utilisateur_id))
             ->when($request->filled('animal_id'), fn ($q) => $q->where('animal_id', $request->animal_id))
@@ -53,7 +53,7 @@ class VenteController extends Controller
     {
         $vente = Vente::with([
             'proprietaire', 'animal', 'utilisateur',
-            'ordonnance', 'lignes.medicament', 'lignes.lot', 'paiements',
+            'ordonnance', 'lignes.medicament', 'lignes.lot', 'paiements','paiements.reglements',
         ])->findOrFail($id);
 
         return response()->json([

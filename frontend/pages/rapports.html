@@ -18,6 +18,7 @@
 
     <main class="main-content">
 
+        <!-- Page header -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Rapports</h1>
@@ -69,36 +70,77 @@
                 <span id="periodLabel">—</span>
             </div>
 
-            <!-- Cartes stats -->
-            <section class="stats-grid" id="statsGrid">
+            <!-- ══════════════════════════════════════════════════
+                 CARTES STATS PRINCIPALES (4)
+                 ══════════════════════════════════════════════════ -->
+            <section class="stats-grid">
+
+                <!-- CA facturé -->
                 <article class="stat-card stat-primary">
                     <div class="stat-icon" data-icon="money"></div>
                     <div class="stat-body">
-                        <span class="stat-label">Chiffre d'affaires TTC</span>
+                        <span class="stat-label">CA facturé TTC</span>
                         <span class="stat-value" id="statCaTtc">—</span>
                         <span class="stat-sub" id="statCaHt">—</span>
                     </div>
                 </article>
 
+                <!-- CA encaissé -->
                 <article class="stat-card stat-success">
+                    <div class="stat-icon" data-icon="caisse"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">CA encaissé</span>
+                        <span class="stat-value" id="statCaEncaisse">—</span>
+                        <span class="stat-sub" id="statPctEncaisse">—</span>
+                    </div>
+                </article>
+
+                <!-- Bénéfice -->
+                <article class="stat-card stat-emerald">
                     <div class="stat-icon" data-icon="trophy"></div>
                     <div class="stat-body">
-                        <span class="stat-label">Marge brute</span>
+                        <span class="stat-label">Bénéfice brut</span>
                         <span class="stat-value" id="statMarge">—</span>
                         <span class="stat-sub" id="statMargePct">—</span>
                     </div>
                 </article>
+
+                <!-- Créances -->
+                <article class="stat-card stat-warning">
+                    <div class="stat-icon" data-icon="alert"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Créances</span>
+                        <span class="stat-value" id="statCreances">—</span>
+                        <span class="stat-sub">Non encaissé</span>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- ══════════════════════════════════════════════════
+                 STATS SECONDAIRES (Tickets, Panier, Clients)
+                 ══════════════════════════════════════════════════ -->
+            <section class="stats-grid stats-grid-3">
 
                 <article class="stat-card stat-info">
                     <div class="stat-icon" data-icon="receipt"></div>
                     <div class="stat-body">
                         <span class="stat-label">Tickets</span>
                         <span class="stat-value" id="statTickets">—</span>
-                        <span class="stat-sub" id="statClients">—</span>
+                        <span class="stat-sub">Ventes sur la période</span>
                     </div>
                 </article>
 
-                <article class="stat-card stat-warning">
+                <article class="stat-card stat-info">
+                    <div class="stat-icon" data-icon="proprietaires"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Clients uniques</span>
+                        <span class="stat-value" id="statClients">—</span>
+                        <span class="stat-sub">Ayant acheté</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-info">
                     <div class="stat-icon" data-icon="caisse"></div>
                     <div class="stat-body">
                         <span class="stat-label">Panier moyen</span>
@@ -106,69 +148,117 @@
                         <span class="stat-sub">Par ticket</span>
                     </div>
                 </article>
+
             </section>
 
-            <!-- Deux colonnes -->
+            <!-- ══════════════════════════════════════════════════
+                 GRAPHIQUE — Évolution (jour/hebdo/mois/année)
+                 ══════════════════════════════════════════════════ -->
+            <section class="grid-1">
+                <article class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">
+                                <span data-icon="trending"></span>
+                                Évolution du chiffre d'affaires
+                            </h3>
+                            <p class="card-subtitle">Facturé vs encaissé sur la période</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container chart-large">
+                            <canvas id="chartEvolution"></canvas>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════
+                 TOP MÉDICAMENT + TOP CLIENTS
+                 ══════════════════════════════════════════════════ -->
             <section class="grid-2">
 
-                <!-- Top médicament -->
+                <!-- Top 5 médicaments -->
                 <article class="card">
                     <div class="card-header">
                         <h3 class="card-title">
                             <span data-icon="trophy"></span>
-                            Top médicament
+                            Top 5 médicaments
                         </h3>
                     </div>
-                    <div class="card-body" id="topMedicamentCard">
-                        <p class="empty">—</p>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="topMedicamentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Médicament</th>
+                                    <th class="text-right">Qté</th>
+                                    <th class="text-right">CA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topMedicamentsTbody">
+                                <tr><td colspan="3" class="empty">Chargement...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </article>
 
-                <!-- Répartition paiements -->
+                <!-- Répartition paiements (compacte) -->
                 <article class="card">
                     <div class="card-header">
                         <h3 class="card-title">
                             <span data-icon="money"></span>
-                            Répartition par paiement
+                            Répartition des paiements
                         </h3>
                     </div>
-                    <div class="card-body" id="repartitionPaiements">
-                        <p class="empty">—</p>
+                    <div class="card-body">
+                        <div class="chart-container chart-container-pie">
+                            <canvas id="chartRepartition"></canvas>
+                        </div>
                     </div>
                 </article>
 
             </section>
 
-            <!-- Détails par mode de paiement -->
-            <section class="grid-3">
-
+            <!-- ══════════════════════════════════════════════════
+                 RÉSUMÉ FINANCIER
+                 ══════════════════════════════════════════════════ -->
+            <section class="grid-1">
                 <article class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Espèces</h3>
+                        <h3 class="card-title">
+                            <span data-icon="info"></span>
+                            Résumé financier
+                        </h3>
                     </div>
                     <div class="card-body">
-                        <div class="stat-simple" id="detailEspeces">—</div>
+                        <div class="finance-summary">
+                            <div class="finance-row">
+                                <span>CA facturé HT</span>
+                                <strong id="financeCaHt">—</strong>
+                            </div>
+                            <div class="finance-row">
+                                <span>CA facturé TVA</span>
+                                <strong id="financeCaTva">—</strong>
+                            </div>
+                            <div class="finance-row finance-row-total">
+                                <span>CA facturé TTC</span>
+                                <strong id="financeCaTtc">—</strong>
+                            </div>
+                            <div class="finance-row">
+                                <span>CA encaissé (espèces + règlements)</span>
+                                <strong id="financeCaEncaisse" style="color: #10b981;">—</strong>
+                            </div>
+                            <div class="finance-row">
+                                <span>Créances (dettes clients)</span>
+                                <strong id="financeCreances" style="color: #f59e0b;">—</strong>
+                            </div>
+                            <div class="finance-row finance-row-total">
+                                <span>Bénéfice brut</span>
+                                <strong id="financeBenefice" style="color: #047857;">—</strong>
+                            </div>
+                        </div>
                     </div>
                 </article>
-
-                <article class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Carte</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="stat-simple" id="detailCarte">—</div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Mobile Money</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="stat-simple" id="detailMobile">—</div>
-                    </div>
-                </article>
-
             </section>
 
         </div>
@@ -179,6 +269,7 @@
 </div>
 
 <!-- Scripts -->
+<script src="../assets/lib/chart.umd.min.js"></script>
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/storage.js"></script>
 <script src="../assets/js/api.js"></script>
@@ -192,7 +283,6 @@
 
 <script>
     Guard.requireAuth();
-
     document.addEventListener('DOMContentLoaded', () => {
         Layout.mount({
             activePage: 'rapports',

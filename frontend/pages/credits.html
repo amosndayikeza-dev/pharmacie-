@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crédits clients — LGO Pharmacie</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/credits.css">
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+    <aside class="sidebar" id="appSidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <header class="header" id="appHeader"></header>
+
+    <main class="main-content">
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Crédits clients</h1>
+                <p class="page-subtitle">Suivi des dettes et encaissements</p>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <section class="stats-grid">
+            <article class="stat-card stat-danger">
+                <div class="stat-icon" data-icon="alert"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Créances actuelles</span>
+                    <span class="stat-value" id="statCreances">—</span>
+                    <span class="stat-sub">À recouvrer</span>
+                </div>
+            </article>
+            <article class="stat-card stat-success">
+                <div class="stat-icon" data-icon="check"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Total réglé</span>
+                    <span class="stat-value" id="statRegle">—</span>
+                    <span class="stat-sub">Depuis le début</span>
+                </div>
+            </article>
+            <article class="stat-card stat-info">
+                <div class="stat-icon" data-icon="proprietaires"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Clients débiteurs</span>
+                    <span class="stat-value" id="statClients">—</span>
+                    <span class="stat-sub">Avec dette active</span>
+                </div>
+            </article>
+            <article class="stat-card stat-warning">
+                <div class="stat-icon" data-icon="receipt"></div>
+                <div class="stat-body">
+                    <span class="stat-label">Total crédits émis</span>
+                    <span class="stat-value" id="statTotal">—</span>
+                    <span class="stat-sub">Toutes périodes</span>
+                </div>
+            </article>
+        </section>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Rechercher par client, ticket...">
+            </div>
+            <button class="btn btn-secondary" id="refreshBtn">
+                <span data-icon="refresh"></span>
+                Rafraîchir
+            </button>
+        </div>
+
+        <!-- Tableau -->
+        <article class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="creditsTable">
+                    <thead>
+                        <tr>
+                            <th>N° Ticket</th>
+                            <th>Client</th>
+                            <th>Téléphone</th>
+                            <th>Date vente</th>
+                            <th class="text-right">Montant initial</th>
+                            <th class="text-right">Déjà réglé</th>
+                            <th class="text-right">Reste à payer</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="creditsTbody">
+                        <tr><td colspan="8" class="empty"><div class="spinner" style="margin: 20px auto;"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="footer" id="appFooter"></footer>
+</div>
+
+<!-- ============================================================
+     MODAL : Règlement d'un crédit
+     ============================================================ -->
+<div class="modal-overlay" id="reglementModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <span data-icon="money"></span>
+                Encaisser un règlement
+            </h3>
+            <button class="modal-close" id="reglementCloseBtn" type="button">
+                <span data-icon="close"></span>
+            </button>
+        </div>
+
+        <form id="reglementForm" style="display: contents;">
+            <div class="modal-body">
+                <input type="hidden" id="reglementPaiementId">
+
+                <div class="info-banner info-banner-info" style="margin-bottom: 16px;">
+                    <span data-icon="info"></span>
+                    <div>
+                        <strong id="reglementClientNom">—</strong><br>
+                        <small id="reglementTicket">—</small>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>Reste à payer</label>
+                    <input type="text" id="reglementReste" disabled>
+                </div>
+
+                <div class="form-field" style="margin-top: 12px;">
+                    <label for="reglementMontant">Montant à encaisser <span class="required">*</span></label>
+                    <input type="number" id="reglementMontant" required min="1" step="100">
+                    <span class="field-error" data-error-for="montant"></span>
+                </div>
+
+                <div class="form-field" style="margin-top: 12px;">
+                    <label for="reglementMode">Mode de paiement</label>
+                    <select id="reglementMode">
+                        <option value="especes">Espèces</option>
+                        <option value="carte">Carte</option>
+                        <option value="mobile_money">Mobile Money</option>
+                    </select>
+                </div>
+
+                <div class="form-field" style="margin-top: 12px;">
+                    <label for="reglementNotes">Notes</label>
+                    <textarea id="reglementNotes" rows="2" placeholder="Observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="reglementCancelBtn">Annuler</button>
+                <button type="submit" class="btn btn-primary" id="reglementSubmitBtn">
+                    <span data-icon="check"></span>
+                    Encaisser
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/guards.js"></script>
+<script src="../assets/js/icons.js"></script>
+<script src="../assets/js/toast.js"></script>
+<script src="../assets/js/components.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/credits.js"></script>
+
+<script>
+    Guard.requireAuth();
+    document.addEventListener('DOMContentLoaded', () => {
+        Layout.mount({ activePage: 'credits', title: 'Crédits clients', breadcrumb: 'Ventes' });
+    });
+</script>
+
+</body>
+</html>

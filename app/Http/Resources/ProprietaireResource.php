@@ -34,8 +34,15 @@ class ProprietaireResource extends JsonResource
             'notes'                   => $this->notes,
 
             // Relations (chargées à la demande)
-            'animaux' => $this->whenLoaded('animaux'),
-            'ventes'  => $this->whenLoaded('ventes'),
+            'nb_animaux' => $this->animaux_count ?? 0,
+            'animaux' => $this->whenLoaded('animaux', function () {
+                return $this->animaux->map(fn ($a) => [
+                    'id'         => $a->id,
+                    'nom'        => $a->nom,
+                    'espece'     => $a->espece?->nom,
+                ]);
+            }),
+            'nb_ventes'  => $this->ventes_count ?? 0,
 
             // Timestamps
             'created_at' => $this->created_at?->toISOString(),

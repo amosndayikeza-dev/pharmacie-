@@ -39,4 +39,38 @@ class Paiement extends Model
             default        => 'Inconnu',
         };
     }
+
+    /**
+ * Règlements encaissés contre ce paiement crédit.
+ */
+    public function reglements()
+    {
+        return $this->hasMany(ReglementCredit::class, 'paiement_id');
+    }
+
+    /**
+     * Montant déjà réglé sur ce crédit.
+     */
+    public function montantRegle(): float
+    {
+        return (float) $this->reglements()->sum('montant');
+    }
+
+    /**
+     * Reste à payer sur ce crédit.
+     */
+    public function resteAPayer(): float
+    {
+        if ($this->type !== 'credit') return 0;
+
+        return (float) $this->montant - $this->montantRegle();
+    }
+
+    /**
+     * Le crédit est-il soldé ?
+     */
+    public function estSolde(): bool
+    {
+        return $this->resteAPayer() <= 0.01;
+    }
 }

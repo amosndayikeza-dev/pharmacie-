@@ -109,9 +109,11 @@ function renderTable() {
     }
 
     const statutLabels = {
-        validee: { label: 'Validée', class: 'badge-success' },
-        annulee: { label: 'Annulée', class: 'badge-danger' },
-        avoir:   { label: 'Avoir',   class: 'badge-warning' },
+        validee:   { label: 'Payée',     class: 'badge-success' },
+        partielle: { label: 'Partielle', class: 'badge-warning' },
+        credit:    { label: 'Crédit',    class: 'badge-danger' },
+        annulee:   { label: 'Annulée',   class: 'badge-neutral' },
+        avoir:     { label: 'Avoir',     class: 'badge-info' },
     };
 
     tbody.innerHTML = State.ventes.map(v => {
@@ -131,6 +133,11 @@ function renderTable() {
                 <td>${formatDateTime(v.date_heure)}</td>
                 <td class="text-right"><strong>${formatMoney(v.montant_total_ttc)}</strong></td>
                 <td><span class="badge ${st.class}">${st.label}</span></td>
+                <td class="text-right">
+                    ${v.reste_a_payer > 0.01
+                        ? `<strong style="color: #dc2626;">${formatMoney(v.reste_a_payer)}</strong>`
+                        : '<span class="badge badge-success">✓ Payée</span>'}
+                </td>
                 <td class="text-right">
                     <button class="btn btn-ghost btn-icon" data-action="view" data-id="${v.id}" title="Voir le ticket">
                         <span data-icon="eye"></span>

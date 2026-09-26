@@ -64,17 +64,57 @@ class Vente extends Model
 
     // === HELPERS ===
 
+    public function estSoldee(): bool
+    {
+        return $this->resteAPayer() <= 0.01;
+    }
+
+        /**
+     * Montant total déjà réglé par le client.
+     *
+     * = espèces payées au moment de la vente
+     * + règlements ultérieurs du crédit
+     */
     public function montantPaye(): float
     {
-        return (float) $this->paiements()->sum('montant');
+        if (! $this->relationLoaded('paiements')) {
+            $this->load('paiements.reglements');
+        }
+
+        // Espèces
+        $especes = (float) $this->paiements
+            ->where('type', 'especes')
+            ->sum('montant');
+
+        // Règlements des crédits
+        $reglements = (float) $this->paiements
+            ->where('type', 'credit')
+            ->flatMap(fn ($p) => $p->reglements)
+            ->sum('montant');
+
+        return round($especes + $reglements, 2);
     }
 
+    /**
+     * Reste à payer par le client.
+     */
     public function resteAPayer(): float
     {
-        return (float) $this->montant_total_ttc - $this->montantPaye();
+        if (! $this->relationLoaded('paiements')) {
+            $this->load('paiements.reglements');
+        }
+
+        $reste = (float) $this->paiements
+            ->where('type', 'credit')
+            ->sum(fn ($p) => $p->resteAPayer());
+
+        return round($reste, 2);
     }
 
-    public function estSoldee(): bool
+    /**
+     * La vente est-elle totalement payée ?
+     */
+    public function estPayee(): bool
     {
         return $this->resteAPayer() <= 0.01;
     }

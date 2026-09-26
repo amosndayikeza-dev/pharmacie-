@@ -54,6 +54,12 @@ const Components = {
                         label: 'Ventes',
                         roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
                     },
+                    {
+                        href: 'credits.html',
+                        icon: 'money',
+                        label: 'Crédits',
+                        roles: ['Administrateur', 'Pharmacien', 'Vendeur'],
+                    },
                 ],
             },
             {
@@ -229,8 +235,8 @@ const Components = {
 
         return `
             <div class="sidebar-brand">
-                <span class="sidebar-brand-icon">🐾</span>
-                <span class="sidebar-brand-text">LGO Pharmacie</span>
+                <img src="../assets/images/logo.png" alt="LGO Pharmacie" class="sidebar-brand-logo">
+                <span class="sidebar-brand-text"> Pharmacie</span>
             </div>
 
             <nav class="sidebar-nav">

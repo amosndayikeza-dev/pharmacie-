@@ -28,7 +28,12 @@ class VenteResource extends JsonResource
 
             // Champs calculés
             'montant_paye'  => $this->montantPaye(),
-            'reste_a_payer' => $this->resteAPayer(),
+            'reste_a_payer' => $this->when(
+                $this->relationLoaded('paiements'),
+                fn () => (float) $this->paiements
+                    ->filter(fn ($p) => $p->type === 'credit')
+                    ->sum(fn ($p) => $p->resteAPayer())
+            ),
             'est_soldee'    => $this->estSoldee(),
 
             // Relations (chargées à la demande)
@@ -42,6 +47,7 @@ class VenteResource extends JsonResource
             // Timestamps
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+            
         ];
     }
 }

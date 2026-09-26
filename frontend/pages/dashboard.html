@@ -8,34 +8,22 @@
     <link rel="stylesheet" href="../assets/css/layout.css">
     <link rel="stylesheet" href="../assets/css/components.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="icon" type="image/png" href="../assets/images/favicon.png">
 </head>
 <body>
 
 <div class="app-layout" id="appLayout">
-
-    <!-- ============================================================
-         SIDEBAR (injectée par Layout.mount)
-         ============================================================ -->
     <aside class="sidebar" id="appSidebar"></aside>
-
-    <!-- Overlay mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- ============================================================
-         HEADER (injecté par Layout.mount)
-         ============================================================ -->
     <header class="header" id="appHeader"></header>
 
-    <!-- ============================================================
-         MAIN — Contenu spécifique au dashboard
-         ============================================================ -->
     <main class="main-content">
 
         <!-- Page header -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Bonjour <span id="welcomeName">—</span> 👋</h1>
-                <p class="page-subtitle">Voici un aperçu de votre activité aujourd'hui</p>
+                <p class="page-subtitle">Voici votre activité en un coup d'œil</p>
             </div>
             <div class="page-actions">
                 <button class="btn btn-secondary" id="refreshBtn">
@@ -54,46 +42,168 @@
         <!-- Contenu -->
         <div id="dashboardContent" hidden>
 
-            <!-- STATS CARDS -->
-            <section class="stats-grid">
+            <!-- ══════════════════════════════════════════════════
+                 HERO — Le KPI le plus important
+                 ══════════════════════════════════════════════════ -->
+            <section class="hero-section">
+                <div class="hero-card">
+                    <div class="hero-content">
+                        <span class="hero-label">CA encaissé ce mois</span>
+                        <span class="hero-value" id="heroCaEncaisse">—</span>
+                        <div class="hero-meta">
+                            <span class="hero-badge" id="heroBadge">—</span>
+                            <span class="hero-subtitle" id="heroSubtitle">—</span>
+                        </div>
+                    </div>
+                    <div class="hero-chart">
+                        <canvas id="chartHero"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════
+                 KPIs SECONDAIRES — 3 cartes
+                 ══════════════════════════════════════════════════ -->
+            <section class="stats-grid-3">
+
                 <article class="stat-card stat-primary">
                     <div class="stat-icon" data-icon="money"></div>
                     <div class="stat-body">
-                        <span class="stat-label">CA du jour</span>
-                        <span class="stat-value" id="statCaJour">—</span>
+                        <span class="stat-label">CA facturé (jour)</span>
+                        <span class="stat-value" id="statCaFactureJour">—</span>
                         <span class="stat-sub" id="statTicketsJour">—</span>
                     </div>
                 </article>
 
-                <article class="stat-card stat-info">
-                    <div class="stat-icon" data-icon="calendar"></div>
-                    <div class="stat-body">
-                        <span class="stat-label">CA du mois</span>
-                        <span class="stat-value" id="statCaMois">—</span>
-                        <span class="stat-sub">Mois en cours</span>
-                    </div>
-                </article>
-
-                <article class="stat-card stat-success">
-                    <div class="stat-icon" data-icon="paw"></div>
-                    <div class="stat-body">
-                        <span class="stat-label">Animaux</span>
-                        <span class="stat-value" id="statAnimaux">—</span>
-                        <span class="stat-sub">Actifs</span>
-                    </div>
-                </article>
-
                 <article class="stat-card stat-warning">
-                    <div class="stat-icon" data-icon="pill"></div>
+                    <div class="stat-icon" data-icon="alert"></div>
                     <div class="stat-body">
-                        <span class="stat-label">Médicaments</span>
-                        <span class="stat-value" id="statMedicaments">—</span>
-                        <span class="stat-sub">Au catalogue</span>
+                        <span class="stat-label">Créances</span>
+                        <span class="stat-value" id="statCreances">—</span>
+                        <span class="stat-sub">Dettes clients</span>
+                    </div>
+                </article>
+
+                <article class="stat-card stat-emerald">
+                    <div class="stat-icon" data-icon="trophy"></div>
+                    <div class="stat-body">
+                        <span class="stat-label">Bénéfice brut (mois)</span>
+                        <span class="stat-value" id="statBenefice">—</span>
+                        <span class="stat-sub" id="statPctMarge">—</span>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- ══════════════════════════════════════════════════
+                 GRAND GRAPHIQUE — Évolution financière (courbes)
+                 ══════════════════════════════════════════════════ -->
+            <section class="grid-1">
+                <article class="card card-chart-large">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">
+                                <span data-icon="trending"></span>
+                                Évolution financière
+                            </h3>
+                            <p class="card-subtitle">Facturé vs encaissé sur les 7 derniers jours</p>
+                        </div>
+                        <div class="chart-legend-custom" id="financeLegend">
+                            <span class="legend-item">
+                                <span class="legend-dot" style="background:#6366f1;"></span>
+                                Facturé
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-dot" style="background:#10b981;"></span>
+                                Encaissé
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container chart-large">
+                            <canvas id="chartFinance"></canvas>
+                        </div>
                     </div>
                 </article>
             </section>
 
-            <!-- ALERTES -->
+            <!-- ══════════════════════════════════════════════════
+                 2 GRAPHIQUES — Top méd & État du stock
+                 ══════════════════════════════════════════════════ -->
+            <section class="grid-2">
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="trophy"></span>
+                            Top 5 médicaments (mois)
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartTopMedicaments"></canvas>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span data-icon="lots"></span>
+                            État du stock
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container chart-container-pie">
+                            <canvas id="chartEtatStock"></canvas>
+                        </div>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- ══════════════════════════════════════════════════
+                 MINI-KPIs — 4 petites cartes inline
+                 ══════════════════════════════════════════════════ -->
+            <section class="mini-kpis">
+
+                <div class="mini-kpi">
+                    <span class="mini-kpi-icon" data-icon="paw"></span>
+                    <div>
+                        <span class="mini-kpi-value" id="statAnimaux">—</span>
+                        <span class="mini-kpi-label">Animaux actifs</span>
+                    </div>
+                </div>
+
+                <div class="mini-kpi">
+                    <span class="mini-kpi-icon" data-icon="pill"></span>
+                    <div>
+                        <span class="mini-kpi-value" id="statMedicaments">—</span>
+                        <span class="mini-kpi-label">Médicaments</span>
+                    </div>
+                </div>
+
+                <div class="mini-kpi">
+                    <span class="mini-kpi-icon" data-icon="lots"></span>
+                    <div>
+                        <span class="mini-kpi-value" id="statLots">—</span>
+                        <span class="mini-kpi-label">Lots en stock</span>
+                    </div>
+                </div>
+
+                <div class="mini-kpi mini-kpi-danger">
+                    <span class="mini-kpi-icon" data-icon="clock"></span>
+                    <div>
+                        <span class="mini-kpi-value" id="statLotsAlerte">—</span>
+                        <span class="mini-kpi-label">Lots en alerte</span>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ══════════════════════════════════════════════════
+                 ALERTES
+                 ══════════════════════════════════════════════════ -->
             <section class="grid-2">
 
                 <article class="card">
@@ -126,15 +236,17 @@
 
             </section>
 
-            <!-- VENTES + TOP -->
-            <section class="grid-2">
-
+            <!-- ══════════════════════════════════════════════════
+                 VENTES RÉCENTES
+                 ══════════════════════════════════════════════════ -->
+            <section class="grid-1">
                 <article class="card">
                     <div class="card-header">
                         <h3 class="card-title">
                             <span data-icon="receipt"></span>
                             Ventes récentes
                         </h3>
+                        <a href="ventes.html" class="card-link">Voir tout →</a>
                     </div>
                     <div class="table-wrapper">
                         <table class="data-table" id="ventesRecentes">
@@ -142,124 +254,54 @@
                                 <tr>
                                     <th>Ticket</th>
                                     <th>Client</th>
+                                    <th>Animal</th>
                                     <th class="text-right">Montant</th>
                                     <th>Heure</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td colspan="4" class="empty">Chargement...</td></tr>
+                                <tr><td colspan="5" class="empty">Chargement...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </article>
-
-                <article class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <span data-icon="trophy"></span>
-                            Top médicaments (mois)
-                        </h3>
-                    </div>
-                    <div class="table-wrapper">
-                        <table class="data-table" id="topMedicaments">
-                            <thead>
-                                <tr>
-                                    <th>Médicament</th>
-                                    <th class="text-right">Qté</th>
-                                    <th class="text-right">CA</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="3" class="empty">Chargement...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </article>
-
             </section>
-                        <!-- ══════════════════════════════════════════════════
-                 GRAPHIQUES
+
+            <!-- ══════════════════════════════════════════════════
+                 RACCOURCIS
                  ══════════════════════════════════════════════════ -->
-            <section class="grid-2">
+            <section class="grid-3" style="margin-top: 24px;">
+                <a href="caisse.html" class="quick-action">
+                    <div class="quick-icon" data-icon="caisse"></div>
+                    <div>
+                        <strong>Ouvrir la caisse</strong>
+                        <small>Nouvelle vente</small>
+                    </div>
+                </a>
 
-                <!-- Graphique CA 7 derniers jours -->
-                <article class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <span data-icon="rapports"></span>
-                            Chiffre d'affaires (7 derniers jours)
-                        </h3>
+                <a href="credits.html" class="quick-action">
+                    <div class="quick-icon" data-icon="money"></div>
+                    <div>
+                        <strong>Voir les crédits</strong>
+                        <small>Suivi des dettes</small>
                     </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="chartVentesSemaine"></canvas>
-                        </div>
-                    </div>
-                </article>
+                </a>
 
-                <!-- Graphique répartition paiements -->
-                <article class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <span data-icon="money"></span>
-                            Répartition des paiements (mois)
-                        </h3>
+                <a href="rapports.html" class="quick-action">
+                    <div class="quick-icon" data-icon="rapports"></div>
+                    <div>
+                        <strong>Rapports</strong>
+                        <small>Analyse détaillée</small>
                     </div>
-                    <div class="card-body">
-                        <div class="chart-container chart-container-pie">
-                            <canvas id="chartPaiements"></canvas>
-                        </div>
-                    </div>
-                </article>
-
+                </a>
             </section>
 
-            <section class="grid-2">
-
-                <!-- Graphique Top 5 médicaments -->
-                <article class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <span data-icon="trophy"></span>
-                            Top 5 médicaments (mois)
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="chartTopMedicaments"></canvas>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Graphique alertes stock -->
-                <article class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <span data-icon="alert"></span>
-                            État du stock
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container chart-container-pie">
-                            <canvas id="chartEtatStock"></canvas>
-                        </div>
-                    </div>
-                </article>
-
-            </section>
         </div>
     </main>
 
-    <!-- ============================================================
-         FOOTER (injecté par Layout.mount)
-         ============================================================ -->
     <footer class="footer" id="appFooter"></footer>
-
 </div>
 
-<!-- ============================================================
-     SCRIPTS — Ordre important !
-     ============================================================ -->
 <script src="../assets/lib/chart.umd.min.js"></script>
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/storage.js"></script>
@@ -273,10 +315,7 @@
 <script src="../assets/js/dashboard.js"></script>
 
 <script>
-    // 1. Protéger la page
     Guard.requireAuth();
-
-    // 2. Monter le layout (sidebar + header + footer)
     document.addEventListener('DOMContentLoaded', () => {
         Layout.mount({
             activePage: 'dashboard',
