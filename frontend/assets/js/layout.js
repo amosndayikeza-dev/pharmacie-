@@ -1,80 +1,60 @@
 /**
- * Gestion du thème clair / sombre.
- *
- * - Persistance dans localStorage (clé : lgo_theme)
- * - Respect de la préférence système au premier chargement
- * - Application immédiate sur <html data-theme="...">
+ * ============================================================
+ * GESTION DU THÈME (clair / sombre)
+ * ============================================================
  */
+
 const Theme = {
     STORAGE_KEY: 'lgo_theme',
 
-    /**
-     * Initialise le thème au chargement de la page.
-     */
     init() {
         const saved = localStorage.getItem(this.STORAGE_KEY);
-
         const theme = saved
             ? saved
             : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-
         this.apply(theme);
     },
 
-    /**
-     * Applique un thème.
-     */
     apply(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem(this.STORAGE_KEY, theme);
         this.updateIcon(theme);
     },
 
-    /**
-     * Bascule entre clair et sombre.
-     */
     toggle() {
         const current = document.documentElement.getAttribute('data-theme') || 'light';
-        const next = current === 'dark' ? 'light' : 'dark';
-        this.apply(next);
+        this.apply(current === 'dark' ? 'light' : 'dark');
     },
 
-    /**
-     * Met à jour l'icône du bouton.
-     */
     updateIcon(theme) {
         const btn = document.getElementById('themeToggle');
         if (!btn) return;
 
-        // Icône
         const iconName = theme === 'dark' ? 'sun' : 'moon';
         const iconEl = btn.querySelector('[data-icon]');
         if (iconEl && typeof Icons !== 'undefined' && Icons[iconName]) {
             iconEl.innerHTML = Icons[iconName];
         }
 
-        // Texte
         const labelEl = btn.querySelector('.theme-label');
         if (labelEl) {
             labelEl.textContent = theme === 'dark' ? 'Thème clair' : 'Thème sombre';
         }
     },
 
-    /**
-     * Retourne le thème courant.
-     */
     current() {
         return document.documentElement.getAttribute('data-theme') || 'light';
     },
 };
 
-// ⚠️ Application IMMÉDIATE (avant le DOMContentLoaded) pour éviter le flash
+// Application IMMÉDIATE (évite le flash de thème)
 Theme.init();
 
 
 /**
- * Layout — Monte les composants (sidebar, header, footer)
- * puis initialise les comportements (toggle, dropdown, etc.).
+ * ============================================================
+ * LAYOUT — Monte les composants + gère les comportements
+ * ============================================================
  */
 
 const Layout = {
@@ -83,11 +63,11 @@ const Layout = {
      * Monte le layout sur la page.
      *
      * @param {object} options
-     * @param {string} options.activePage    Nom de la page active (sans .html)
-     * @param {string} options.title         Titre du header
-     * @param {string} options.breadcrumb    Sous-titre du header
+     * @param {string} options.activePage   Nom de la page active (sans .html)
+     * @param {string} options.title        Titre du header
+     * @param {string} options.breadcrumb   Sous-titre du header
      */
-        mount(options = {}) {
+    mount(options = {}) {
         const { activePage = '', title = '', breadcrumb = '' } = options;
 
         const sidebarEl = document.getElementById('appSidebar');
@@ -106,18 +86,124 @@ const Layout = {
             }
         });
 
+        // Injecter la modale de déconnexion (une seule fois)
+        this.injectLogoutModal();
+
+        // Initialiser les comportements
         this.setupSidebar();
         this.setupUserMenu();
         this.setupTheme();
         this.renderUser();
     },
 
+    // ============================================================
+    // MODALE DE DÉCONNEXION
+    // ============================================================
+
     /**
-     * Sidebar : toggle + responsive.
+     * Injecte la modale de déconnexion dans le DOM (une seule fois).
      */
+    injectLogoutModal() {
+        if (document.getElementById('logoutModal')) return;
+
+        const modal = document.createElement('div');
+        modal.id = 'logoutModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal modal-sm">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <span data-icon="logout"></span>
+                        Déconnexion
+                    </h3>
+                    <button class="modal-close" type="button" data-action="close-logout">
+                        <span data-icon="close"></span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="logout-content">
+                        <div class="logout-icon">
+                            <span data-icon="logout"></span>
+                        </div>
+                        <h4 class="logout-title">Voulez-vous vraiment vous déconnecter ?</h4>
+                        <p class="logout-text">
+                            Vous serez redirigé vers la page de connexion.<br>
+                            Toute modification non enregistrée sera perdue.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-action="close-logout">
+                        Annuler
+                    </button>
+                    <button type="button" class="btn btn-danger" data-action="confirm-logout">
+                        <span data-icon="logout"></span>
+                        Se déconnecter
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Réinjecter les icônes SVG
+        modal.querySelectorAll('[data-icon]').forEach(el => {
+            const name = el.getAttribute('data-icon');
+            if (typeof Icons !== 'undefined' && Icons[name]) {
+                el.innerHTML = Icons[name];
+            }
+        });
+
+        // ─── Boutons "Annuler" et ✕ ───
+        modal.querySelectorAll('[data-action="close-logout"]').forEach(btn => {
+            btn.addEventListener('click', () => this.closeLogoutModal());
+        });
+
+        // ─── Bouton "Se déconnecter" ───
+        modal.querySelector('[data-action="confirm-logout"]').addEventListener('click', () => {
+            if (typeof Auth !== 'undefined' && Auth.logout) {
+                Auth.logout();
+            } else {
+                localStorage.clear();
+                window.location.href = '/frontend/index.html';
+            }
+        });
+
+        // ─── Fermer au clic sur l'overlay ───
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeLogoutModal();
+        });
+
+        // ─── Fermer avec Échap ───
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('open')) {
+                this.closeLogoutModal();
+            }
+        });
+    },
+
+    /**
+     * Ouvre la modale de déconnexion.
+     */
+    openLogoutModal() {
+        document.getElementById('logoutModal')?.classList.add('open');
+    },
+
+    /**
+     * Ferme la modale de déconnexion.
+     */
+    closeLogoutModal() {
+        document.getElementById('logoutModal')?.classList.remove('open');
+    },
+
+    // ============================================================
+    // SIDEBAR
+    // ============================================================
+
     setupSidebar() {
-        const layout = document.getElementById('appLayout');
-        const toggle = document.getElementById('sidebarToggle');
+        const layout  = document.getElementById('appLayout');
+        const toggle  = document.getElementById('sidebarToggle');
         const overlay = document.getElementById('sidebarOverlay');
 
         if (toggle) {
@@ -149,11 +235,12 @@ const Layout = {
         }
     },
 
-    /**
-     * Menu utilisateur (dropdown).
-     */
+    // ============================================================
+    // MENU UTILISATEUR
+    // ============================================================
+
     setupUserMenu() {
-        const trigger = document.getElementById('userTrigger');
+        const trigger  = document.getElementById('userTrigger');
         const dropdown = document.getElementById('userDropdown');
 
         if (!trigger || !dropdown) return;
@@ -163,28 +250,34 @@ const Layout = {
             dropdown.classList.toggle('open');
         });
 
+        // Fermer au clic ailleurs
         document.addEventListener('click', () => {
             dropdown.classList.remove('open');
         });
 
         dropdown.addEventListener('click', (e) => e.stopPropagation());
 
-        // Déconnexion
+        // ─── Bouton "Se déconnecter" ───
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-                    Auth.logout();
-                }
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Fermer le dropdown avant d'ouvrir la modale
+                dropdown.classList.remove('open');
+
+                // ⚠️ Ouvre la modale de déconnexion (méthode du Layout)
+                this.openLogoutModal();
             });
         }
     },
 
+    // ============================================================
+    // THÈME
+    // ============================================================
 
-        /**
-     * Branche le bouton de bascule de thème.
-     */
-        setupTheme() {
+    setupTheme() {
         const btn = document.getElementById('themeToggle');
         if (!btn) return;
 
@@ -193,17 +286,17 @@ const Layout = {
         btn.parentNode.replaceChild(newBtn, btn);
 
         newBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // ⚠️ Empêche la fermeture du dropdown
+            e.stopPropagation(); // Empêche la fermeture du dropdown
             Theme.toggle();
         });
 
-        // Mettre à jour l'apparence du bouton
         Theme.updateIcon(Theme.current());
     },
 
-    /**
-     * Affiche le nom et le rôle de l'utilisateur dans le header.
-     */
+    // ============================================================
+    // AFFICHAGE UTILISATEUR
+    // ============================================================
+
     renderUser() {
         const user = Storage.getUser();
         if (!user) return;
@@ -219,19 +312,21 @@ const Layout = {
 
 
 /**
- * Vérifie que l'utilisateur a le droit d'accéder à cette page.
- * Redirige vers le dashboard si non autorisé.
+ * ============================================================
+ * VÉRIFICATION D'ACCÈS PAR PAGE
+ * ============================================================
  */
+
 function checkPageAccess() {
     const user = Storage.getUser();
-    if (!user) return; // Guard.requireAuth() gère déjà ça
+    if (!user) return;
 
-    // Pages réservées à l'Admin
     const adminPages = ['utilisateurs.html', 'logs.html'];
-    // Pages Admin + Pharmacien
-    const staffPages = ['rapports.html', 'mouvements.html', 'exports.html',
-                        'fournisseurs.html', 'achats.html', 'receptions.html',
-                        'lots.html', 'parametres.html'];
+    const staffPages = [
+        'rapports.html', 'mouvements.html', 'exports.html',
+        'fournisseurs.html', 'achats.html', 'receptions.html',
+        'lots.html', 'parametres.html'
+    ];
 
     const currentPage = window.location.pathname.split('/').pop();
 

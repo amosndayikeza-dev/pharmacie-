@@ -445,3 +445,61 @@
         display: none;
     }
 }
+
+/* ============================================================
+   MODALE DE DÉCONNEXION
+   ============================================================ */
+
+.logout-content {
+    text-align: center;
+    padding: 8px 0;
+}
+
+.logout-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: var(--danger-50);
+    color: var(--danger-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-icon svg,
+.logout-icon .icon {
+    width: 32px;
+    height: 32px;
+}
+
+.logout-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+.logout-text {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+/* Bouton danger */
+.btn.btn-danger {
+    background: var(--danger-600);
+    color: white;
+    border: 1px solid var(--danger-600);
+}
+
+.btn.btn-danger:hover {
+    background: var(--danger-700);
+    border-color: var(--danger-700);
+}
+
+/* Mode sombre */
+[data-theme="dark"] .logout-icon {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
