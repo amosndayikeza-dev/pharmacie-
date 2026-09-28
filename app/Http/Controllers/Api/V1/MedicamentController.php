@@ -11,9 +11,26 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;   // ⚠️ AJOUT : gestion des fichiers
 
 /**
- * Controller API des médicaments vétérinaires.
+ * ============================================================
+ * CONTROLLER API DES MÉDICAMENTS VÉTÉRINAIRES
+ * ============================================================
+ *
+ * Gère :
+ *   - Liste paginée + filtres (recherche, catégorie, ordonnance, espèce)
+ *   - Détail d'un médicament (stock, alertes, lots)
+ *   - Création avec UPLOAD D'IMAGE
+ *   - Modification avec remplacement ou suppression d'image
+ *   - Soft delete + restauration
+ *   - Alertes de stock
+ *   - Liste des catégories distinctes
+ *
+ * SÉCURITÉ DES IMAGES :
+ *   - Stockage dans storage/app/public/medicaments/
+ *   - Suppression physique de l'ancienne image lors du remplacement
+ *   - Suppression physique lors du hard delete (via forceDelete si implémenté)
  */
 class MedicamentController extends Controller
 {
@@ -80,16 +97,31 @@ class MedicamentController extends Controller
     }
 
     /**
-     * Créer un médicament.
+     * Créer un médicament (avec upload d'image).
      *
      * POST /api/v1/medicaments
-     * Rôle requis : Administrateur
+     * Rôle requis : Administrateur, Pharmacien
+     *
+     * ⚠️ IMPORTANT : envoi multipart/form-data (FormData côté JS)
      */
     public function store(StoreMedicamentRequest $request): JsonResponse
     {
         $medicament = DB::transaction(function () use ($request) {
-            $medicament = Medicament::create($request->validated());
 
+            // ─── 1. Récupérer les données validées ───
+            $data = $request->validated();
+
+            // ─── 2. Gestion de l'image ───
+            if ($request->hasFile('image')) {
+                // Stocke dans storage/app/public/medicaments/
+                // Retourne le chemin relatif : "medicaments/abc123.jpg"
+                $data['image'] = $request->file('image')->store('medicaments', 'public');
+            }
+
+            // ─── 3. Créer le médicament AVEC l'image ───
+            $medicament = Medicament::create($data);
+
+            // ─── 4. Synchroniser les espèces ───
             if ($request->has('especes')) {
                 $medicament->especes()->sync($request->input('especes', []));
             }
@@ -104,18 +136,44 @@ class MedicamentController extends Controller
     }
 
     /**
-     * Modifier un médicament.
+     * Modifier un médicament (avec gestion de l'image).
      *
      * PUT/PATCH /api/v1/medicaments/{id}
-     * Rôle requis : Administrateur
+     * Rôle requis : Administrateur, Pharmacien
+     *
+     * Comportements selon les données reçues :
+     *   - Fichier "image" présent         → remplace l'ancienne image
+     *   - Champ "supprimer_image" = true  → supprime l'image sans en mettre
+     *   - Rien des deux                    → conserve l'image actuelle
      */
     public function update(UpdateMedicamentRequest $request, int $id): JsonResponse
     {
         $medicament = Medicament::findOrFail($id);
 
         DB::transaction(function () use ($request, $medicament) {
-            $medicament->update($request->validated());
 
+            // ─── 1. Récupérer les données validées ───
+            $data = $request->validated();
+
+            // ─── 2. Cas 1 : nouvelle image uploadée ───
+            if ($request->hasFile('image')) {
+                // Supprimer l'ancienne image physique
+                $this->supprimerFichierImage($medicament->image);
+
+                // Enregistrer la nouvelle
+                $data['image'] = $request->file('image')->store('medicaments', 'public');
+            }
+
+            // ─── 3. Cas 2 : suppression explicite demandée ───
+            elseif ($request->boolean('supprimer_image')) {
+                $this->supprimerFichierImage($medicament->image);
+                $data['image'] = null;
+            }
+
+            // ─── 4. Appliquer les modifications ───
+            $medicament->update($data);
+
+            // ─── 5. Synchroniser les espèces ───
             if ($request->has('especes')) {
                 $medicament->especes()->sync($request->input('especes', []));
             }
@@ -132,6 +190,9 @@ class MedicamentController extends Controller
      *
      * DELETE /api/v1/medicaments/{id}
      * Rôle requis : Administrateur
+     *
+     * ⚠️ L'image N'EST PAS supprimée physiquement (soft delete).
+     *    Elle sera supprimée si restauration impossible ou hard delete.
      */
     public function destroy(int $id): JsonResponse
     {
@@ -210,7 +271,7 @@ class MedicamentController extends Controller
      * Activer / désactiver un médicament.
      *
      * POST /api/v1/medicaments/{id}/toggle-actif
-     * Rôle requis : Administrateur
+     * Rôle requis : Administrateur, Pharmacien
      */
     public function toggleActif(int $id): JsonResponse
     {
@@ -240,5 +301,27 @@ class MedicamentController extends Controller
             'message' => 'Médicament restauré.',
             'data'    => new MedicamentResource($medicament),
         ]);
+    }
+
+    // ============================================================
+    // HELPERS PRIVÉS
+    // ============================================================
+
+    /**
+     * Supprime physiquement un fichier image du disque.
+     *
+     * Vérifie son existence avant suppression pour éviter les erreurs.
+     *
+     * @param string|null $chemin Chemin relatif (ex: "medicaments/abc.jpg")
+     */
+    private function supprimerFichierImage(?string $chemin): void
+    {
+        if (! $chemin) {
+            return;
+        }
+
+        if (Storage::disk('public')->exists($chemin)) {
+            Storage::disk('public')->delete($chemin);
+        }
     }
 }

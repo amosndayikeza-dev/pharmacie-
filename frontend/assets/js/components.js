@@ -25,7 +25,7 @@ const Components = {
      * @returns {string} HTML
      */
     sidebar(activePage = '') {
-        // ⚠️ Récupérer le rôle de l'utilisateur connecté
+        //  Récupérer le rôle de l'utilisateur connecté
         const user = typeof Storage !== 'undefined' ? Storage.getUser() : null;
         const userRole = user?.role || null;
 
@@ -290,7 +290,7 @@ const Components = {
                         Paramètres
                     </a>
 
-                    <!-- ⚠️ Toggle de thème DANS le menu -->
+                    <!--  Toggle de thème DANS le menu -->
                     <button class="dropdown-item" id="themeToggle" type="button">
                         <span data-icon="moon"></span>
                         <span class="theme-label">Thème sombre</span>
@@ -305,6 +305,7 @@ const Components = {
             </div>
         `;
     },
+        
     // ============================================================
     // FOOTER
     // ============================================================

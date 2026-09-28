@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Modèle Medicament — Catalogue des médicaments vétérinaires.
@@ -18,7 +19,7 @@ class Medicament extends Model
 
     protected $table = "medicaments";
     protected $fillable = [
-        'code_cip', 'code_barre', 'nom', 'denomination_commune',
+        'code_cip', 'code_barre', 'nom','image', 'denomination_commune',
         'forme', 'dosage', 'laboratoire',
         'categorie', 'sur_ordonnance', 'usage_preventif',
         'posologie', 'voie_administration', 'delai_attente',
@@ -101,4 +102,20 @@ class Medicament extends Model
     {
         return $query->whereHas('especes', fn ($q) => $q->where('especes.id', $especeId));
     }
+
+    /**
+     * URL publique de l'image (ou null si absente).
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if (! $this->image) return null;
+
+        // Vérifier que le fichier existe
+        if (! Storage::disk('public')->exists($this->image)) {
+            return null;
+        }
+
+        return asset('storage/' . $this->image);
+    }
+
 }

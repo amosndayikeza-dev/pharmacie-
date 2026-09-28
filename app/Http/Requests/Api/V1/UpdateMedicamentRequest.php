@@ -40,6 +40,13 @@ class UpdateMedicamentRequest extends FormRequest
             ],
             'code_barre'               => ['nullable', 'string', 'max:50'],
             'nom'                      => ['sometimes', 'required', 'string', 'max:200'],
+            'image' => [
+                'required',
+                'image',                       // jpg, png, gif, webp, svg
+                'mimes:jpg,jpeg,png,webp,gif',
+                'max:2048',                    // 2 Mo max
+            ],
+            'supprimer_image' => ['nullable', 'boolean'],
             'denomination_commune'     => ['nullable', 'string', 'max:200'],
             'forme'                    => ['nullable', 'string', 'max:50'],
             'dosage'                   => ['nullable', 'string', 'max:50'],

@@ -82,6 +82,7 @@
                 <table class="data-table" id="medicamentsTable">
                     <thead>
                         <tr>
+                            <th>Image</th>
                             <th>Code CIP</th>
                             <th>Nom</th>
                             <th>Catégorie</th>
@@ -154,6 +155,47 @@
                         <label for="nom">Nom <span class="required">*</span></label>
                         <input type="text" id="nom" name="nom" required maxlength="200">
                         <span class="field-error" data-error-for="nom"></span>
+                    </div>
+
+                    <!-- Image du médicament -->
+                    <div class="form-field">
+                        <label for="image">Image</label>
+
+                        <div class="image-upload-wrapper">
+                            <!-- Aperçu -->
+                            <div class="image-preview" id="imagePreview">
+                                <span class="image-placeholder" data-icon="image"></span>
+                            </div>
+
+                            <!-- Boutons -->
+                            <div class="image-upload-actions">
+                                <input type="file"
+                                    id="image"
+                                    name="image"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    hidden>
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        onclick="document.getElementById('image').click()">
+                                    <span data-icon="upload"></span>
+                                    Choisir une image
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-ghost btn-sm"
+                                        id="removeImageBtn"
+                                        hidden>
+                                    <span data-icon="trash"></span>
+                                    Retirer
+                                </button>
+                            </div>
+                        </div>
+
+                        <span class="field-hint">
+                            Format JPG, PNG, WEBP ou GIF — 2 Mo max.
+                        </span>
+                        <span class="field-error" data-error-for="image"></span>
                     </div>
 
                     <!-- DCI -->

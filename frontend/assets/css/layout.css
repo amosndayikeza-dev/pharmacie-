@@ -135,7 +135,8 @@
     padding: 12px;
 }
 
-.sidebar-collapsed .sidebar-link span {
+/* Cacher uniquement le LABEL (texte), pas les icônes */
+.sidebar-collapsed .sidebar-link span:not(.icon):not([data-icon]) {
     display: none;
 }
 

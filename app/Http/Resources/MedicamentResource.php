@@ -20,6 +20,8 @@ class MedicamentResource extends JsonResource
             'id'                       => $this->id,
             'code_cip'                 => $this->code_cip,
             'nom'                      => $this->nom,
+            'image'                    => $this->image,      
+            'image_url'                => $this->image_url,
             'denomination_commune'     => $this->denomination_commune,
             'forme'                    => $this->forme,
             'dosage'                   => $this->dosage,

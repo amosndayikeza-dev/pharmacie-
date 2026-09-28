@@ -37,6 +37,7 @@ const State = {
         actif:          '',
     },
     editingId: null,
+    supprimerImage: false, 
 };
 
 // ============================================================
@@ -77,6 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Brancher les événements
     setupEventListeners();
+    setupImageUpload(); 
 });
 
 // ============================================================
@@ -283,6 +285,14 @@ function renderTable() {
         // === Ligne HTML ===
         return `
             <tr>
+                <td>
+                    ${m.image_url
+                        ? `<img src="${escapeHtml(m.image_url)}"
+                                alt="${escapeHtml(m.nom)}"
+                                class="medicament-thumb"
+                                loading="lazy">`
+                        : '<span class="medicament-thumb medicament-thumb-empty" data-icon="image"></span>'}
+                </td>
                 <td><code>${escapeHtml(m.code_cip)}</code></td>
                 <td>
                     <strong>${escapeHtml(m.nom)}</strong>
@@ -387,6 +397,7 @@ function openCreateModal() {
     document.getElementById('actif').checked = true;
     clearFormErrors();
     document.getElementById('medicamentModal').classList.add('open');
+    resetImagePreview(null); 
 }
 
 /**
@@ -440,6 +451,7 @@ function editMedicament(id) {
 
     clearFormErrors();
     document.getElementById('medicamentModal').classList.add('open');
+    resetImagePreview(m.image_url); 
 }
 
 /**
@@ -493,6 +505,9 @@ function deleteMedicament(id) {
 
 /**
  * Gère la soumission du formulaire (création OU modification).
+ *
+ * ⚠️ Utilise FormData (pas JSON) pour envoyer l'image.
+ *    Pour un PUT avec FormData, Laravel exige POST + _method=PUT.
  */
 async function submitMedicamentForm(e) {
     e.preventDefault();
@@ -504,47 +519,104 @@ async function submitMedicamentForm(e) {
     btn.disabled = true;
     document.getElementById('submitBtnText').textContent = 'Enregistrement...';
 
-    // Construire le payload
-    const data = {
-        code_cip:                 document.getElementById('codeCip').value.trim(),
-        code_barre:               document.getElementById('codeBarre').value.trim() || null,
-        nom:                      document.getElementById('nom').value.trim(),
-        denomination_commune:     document.getElementById('denominationCommune').value.trim() || null,
-        laboratoire:              document.getElementById('laboratoire').value.trim() || null,
-        forme:                    document.getElementById('forme').value.trim() || null,
-        dosage:                   document.getElementById('dosage').value.trim() || null,
-        categorie:                document.getElementById('categorie').value || null,
-        voie_administration:      document.getElementById('voieAdministration').value.trim() || null,
-        prix_vente_ttc_reference: parseFloat(document.getElementById('prixVente').value) || 0,
-        taux_tva:                 parseFloat(document.getElementById('tauxTva').value) || 0,
-        seuil_alerte:             parseInt(document.getElementById('seuilAlerte').value) || 0,
-        stock_max:                parseInt(document.getElementById('stockMax').value) || null,
-        delai_attente:            document.getElementById('delaiAttente').value.trim() || null,
-        posologie:                document.getElementById('posologie').value.trim() || null,
-        sur_ordonnance:           document.getElementById('surOrdonnance').checked,
-        usage_preventif:          document.getElementById('usagePreventif').checked,
-        actif:                    document.getElementById('actif').checked,
-    };
+    // ═══════════════════════════════════════════════════════════
+    // 1. Construire le FormData (au lieu d'un objet JSON)
+    // ═══════════════════════════════════════════════════════════
+    const formData = new FormData();
+
+    // ─── Champs texte ───
+    formData.append('code_cip',                 document.getElementById('codeCip').value.trim());
+    formData.append('code_barre',               document.getElementById('codeBarre').value.trim());
+    formData.append('nom',                      document.getElementById('nom').value.trim());
+    formData.append('denomination_commune',     document.getElementById('denominationCommune').value.trim());
+    formData.append('laboratoire',              document.getElementById('laboratoire').value.trim());
+    formData.append('forme',                    document.getElementById('forme').value.trim());
+    formData.append('dosage',                   document.getElementById('dosage').value.trim());
+    formData.append('categorie',                document.getElementById('categorie').value || '');
+    formData.append('voie_administration',      document.getElementById('voieAdministration').value.trim());
+    formData.append('prix_vente_ttc_reference', parseFloat(document.getElementById('prixVente').value) || 0);
+    formData.append('taux_tva',                 parseFloat(document.getElementById('tauxTva').value) || 0);
+    formData.append('seuil_alerte',             parseInt(document.getElementById('seuilAlerte').value) || 0);
+    formData.append('stock_max',                parseInt(document.getElementById('stockMax').value) || '');
+    formData.append('delai_attente',            document.getElementById('delaiAttente').value.trim());
+    formData.append('posologie',                document.getElementById('posologie').value.trim());
+    formData.append('sur_ordonnance',           document.getElementById('surOrdonnance').checked ? '1' : '0');
+    formData.append('usage_preventif',          document.getElementById('usagePreventif').checked ? '1' : '0');
+    formData.append('actif',                    document.getElementById('actif').checked ? '1' : '0');
+
+    // ═══════════════════════════════════════════════════════════
+    // 2. ⚠️ IMAGE — le fichier uploadé depuis l'ordinateur
+    // ═══════════════════════════════════════════════════════════
+    const imageInput = document.getElementById('image');
+
+    if (imageInput && imageInput.files && imageInput.files[0]) {
+        formData.append('image', imageInput.files[0]);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 3. ⚠️ Suppression de l'image (bouton "Retirer" cliqué)
+    // ═══════════════════════════════════════════════════════════
+    if (State.supprimerImage) {
+        formData.append('supprimer_image', '1');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 4. ⚠️ Pour un PUT, Laravel attend POST + _method=PUT
+    //    (car multipart/form-data ne supporte pas PUT nativement)
+    // ═══════════════════════════════════════════════════════════
+    if (State.editingId) {
+        formData.append('_method', 'PUT');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 5. Envoi via fetch brut (⚠️ PAS Api.post/Api.put)
+    //
+    //    Raison : l'Api wrapper fait probablement
+    //    `JSON.stringify(data)` + `Content-Type: application/json`
+    //    → ça casserait le FormData.
+    //
+    //    ⚠️ NE JAMAIS définir Content-Type manuellement ici !
+    //    Le navigateur le fait automatiquement avec le bon boundary.
+    // ═══════════════════════════════════════════════════════════
+    const url = State.editingId
+    ? `${CONFIG.API_BASE_URL}/medicaments/${State.editingId}`
+    : `${CONFIG.API_BASE_URL}/medicaments`;
+
+    const method = State.editingId ? 'POST' : 'POST';  // toujours POST
 
     try {
-        let response;
-        if (State.editingId) {
-            response = await Api.put(`/medicaments/${State.editingId}`, data);
-        } else {
-            response = await Api.post('/medicaments', data);
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Accept':        'application/json',
+                'Authorization': `Bearer ${Storage.getToken()}`,
+                // ❌ PAS de Content-Type : le navigateur le gère
+            },
+            body: formData,
+        });
+
+        const json = await response.json();
+
+        // Erreur HTTP (validation, 500, etc.)
+        if (!response.ok) {
+            throw json;
         }
 
-        Toast.success(response.message);
+        // ✅ Succès
+        Toast.success(json.message || 'Médicament enregistré.');
         closeModal('medicamentModal');
         await loadMedicaments(State.pagination.current_page || 1);
+
     } catch (error) {
+        console.error('[submitMedicamentForm] Erreur:', error);
+
         if (error.errors) {
             // Erreurs de validation par champ
             Object.entries(error.errors).forEach(([field, messages]) => {
                 showFieldError(field, messages[0]);
             });
         } else {
-            Toast.error(error.message);
+            Toast.error(error.message || 'Erreur lors de l\'enregistrement.');
         }
     } finally {
         btn.disabled = false;
@@ -736,4 +808,87 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Branche le champ image :
+ *   - Aperçu lors de la sélection
+ *   - Bouton "Retirer" pour annuler
+ */
+function setupImageUpload() {
+    const input     = document.getElementById('image');
+    const preview   = document.getElementById('imagePreview');
+    const removeBtn = document.getElementById('removeImageBtn');
+
+    if (!input || !preview) return;
+
+    // ─── Sélection d'une nouvelle image ───
+    input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validation taille (2 Mo)
+        if (file.size > 2 * 1024 * 1024) {
+            Toast.error('Image trop volumineuse (2 Mo maximum).');
+            input.value = '';
+            return;
+        }
+
+        // Aperçu immédiat via FileReader
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            preview.innerHTML = `<img src="${ev.target.result}" alt="Aperçu">`;
+        };
+        reader.readAsDataURL(file);
+
+        State.supprimerImage = false;
+        if (removeBtn) removeBtn.hidden = false;
+    });
+
+    // ─── Bouton "Retirer" ───
+    removeBtn?.addEventListener('click', () => {
+        input.value = '';
+
+        // Réinitialiser l'aperçu avec l'icône par défaut
+        if (Icons.image) {
+            preview.innerHTML = `<span class="image-placeholder">${Icons.image}</span>`;
+        } else {
+            preview.innerHTML = '<span class="image-placeholder">📷</span>';
+        }
+
+        removeBtn.hidden = true;
+        State.supprimerImage = true;   // → sera envoyé au serveur
+    });
+}
+
+/**
+ * Réinitialise l'aperçu de l'image (à l'ouverture du modal).
+ *
+ * @param {string|null} imageUrl  URL de l'image actuelle (null en création)
+ */
+function resetImagePreview(imageUrl) {
+    const preview   = document.getElementById('imagePreview');
+    const removeBtn = document.getElementById('removeImageBtn');
+    const input     = document.getElementById('image');
+
+    if (!preview) return;
+
+    // Reset du champ fichier
+    if (input) input.value = '';
+
+    State.supprimerImage = false;
+
+    if (imageUrl) {
+        // Afficher l'image existante
+        preview.innerHTML = `<img src="${imageUrl}" alt="Image actuelle">`;
+        if (removeBtn) removeBtn.hidden = false;
+    } else {
+        // Afficher le placeholder
+        if (Icons.image) {
+            preview.innerHTML = `<span class="image-placeholder">${Icons.image}</span>`;
+        } else {
+            preview.innerHTML = '<span class="image-placeholder">📷</span>';
+        }
+        if (removeBtn) removeBtn.hidden = true;
+    }
 }

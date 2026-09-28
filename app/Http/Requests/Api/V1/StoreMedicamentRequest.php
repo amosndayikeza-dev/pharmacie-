@@ -20,6 +20,13 @@ class StoreMedicamentRequest extends FormRequest
         return [
             'code_cip'                 => ['required', 'string', 'max:50', 'unique:medicaments,code_cip'],
             'nom'                      => ['required', 'string', 'max:200'],
+            'image' => [
+                'nullable',
+                'image',                       // jpg, png, gif, webp, svg
+                'mimes:jpg,jpeg,png,webp,gif',
+                'max:2048',                    // 2 Mo max
+            ],
+            'supprimer_image' => ['nullable', 'boolean'],
             'denomination_commune'     => ['nullable', 'string', 'max:200'],
             'forme'                    => ['nullable', 'string', 'max:50'],
             'dosage'                   => ['nullable', 'string', 'max:50'],
